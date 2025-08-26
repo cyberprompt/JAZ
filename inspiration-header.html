@@ -1,0 +1,874 @@
+<!-- INSPIRATION HOME STYLES -->
+<style>
+  @media screen and (min-width: 767px) {
+    div.portfolio-text {
+      display: none;
+    }
+  }
+
+  #gridThumbs a.grid-item .grid-image .inspire-rollover {
+    position: absolute;
+    display: inline-flex;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    font-size: calc(
+      (var(--portfolio-grid-basic-title-font-font-size-value) - 1) * 1.2vw +
+        1rem
+    );
+  }
+
+  #gridThumbs a.grid-item .grid-image .inspire-rollover:hover {
+    opacity: 1;
+  }
+
+  /* Target portfolio grid items and their images */
+  #gridThumbs .grid-item img,
+  #gridThumbs .grid-item .grid-image img,
+  .portfolio-grid-basic .grid-item img,
+  .portfolio-grid-overlay .grid-item img {
+    transform: none !important;
+    transition: none !important;
+  }
+</style>
+
+<!-- INSPIRATION GALLERY STYLES -->
+<style>
+  .gallery-masonry-item:last-child {
+    display: none;
+  }
+
+  /* Custom previous/next arrow cursors on Lightbox Control Overlays */
+  .gallery-lightbox-control[data-next] {
+    cursor: url("data:image/svg+xml,%3Csvg fill='%23ffffff' width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='scale(-1,1) translate(-32,0)'%3E%3Cpath d='M19.5,28C19.5,28,19.5,28,19.5,28c-1,0-1.8-0.4-2.5-1l-9.3-9.4c-0.9-0.9-0.9-2.3,0-3.1l9.3-9.4c0.7-0.7,1.6-1,2.5-1c0,0,0,0,0,0c1,0,1.8,0.4,2.5,1c1.4,1.4,1.4,3.6,0,5l-5.7,5.8c-0.1,0.1-0.1,0.2,0,0.3l5.7,5.8c1.4,1.4,1.4,3.6,0,5C21.3,27.6,20.4,28,19.5,28z'/%3E%3C/g%3E%3C/svg%3E")
+        16 16,
+      pointer;
+  }
+  .gallery-lightbox-control[data-previous] {
+    cursor: url("data:image/svg+xml,%3Csvg fill='%23ffffff' width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19.5,28C19.5,28,19.5,28,19.5,28c-1,0-1.8-0.4-2.5-1l-9.3-9.4c-0.9-0.9-0.9-2.3,0-3.1l9.3-9.4c0.7-0.7,1.6-1,2.5-1c0,0,0,0,0,0c1,0,1.8,0.4,2.5,1c1.4,1.4,1.4,3.6,0,5l-5.7,5.8c-0.1,0.1-0.1,0.2,0,0.3l5.7,5.8c1.4,1.4,1.4,3.6,0,5C21.3,27.6,20.4,28,19.5,28z'/%3E%3C/svg%3E")
+        16 16,
+      pointer;
+  }
+</style>
+
+<style>
+  /* Slide Number Bug Styles */
+  .jaz-slide-number-bug {
+    z-index: 10;
+    color: black;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid white;
+  }
+</style>
+
+<style>
+  /* Custom End Slide Styles */
+
+  .jaz-insp-replaced .gallery-lightbox-item-src {
+    overflow-y: auto !important;
+  }
+
+  .jaz-insp-end-slide {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    opacity: 1 !important;
+    transition: opacity 600ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  .jaz-insp-content-container {
+    text-align: center;
+    padding: 40px 30px;
+    max-width: 600px;
+    width: 100%;
+    background: linear-gradient(135deg, #3078f4 0%, #a6c197 100%) !important;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-sizing: border-box;
+    font-family: var(--body-font-font-family);
+  }
+
+  .jaz-insp-title {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    color: white;
+    font-weight: 300;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    line-height: 1.2;
+  }
+
+  .jaz-insp-description {
+    font-size: 1.2em;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+  }
+
+  .jaz-insp-button-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .jaz-insp-btn {
+    display: inline-block;
+    padding: 12px 25px;
+    text-decoration: none;
+    border-radius: 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    font-size: 0.9em;
+    min-width: 140px;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .jaz-insp-btn-primary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .jaz-insp-btn-secondary {
+    background: white;
+    color: #333;
+  }
+
+  .jaz-insp-btn-tertiary {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .jaz-insp-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .jaz-insp-btn-primary:hover {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+
+  .jaz-insp-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.95);
+    color: #222;
+  }
+
+  .jaz-insp-btn-tertiary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .jaz-insp-prev-next {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1em;
+  }
+
+  .jaz-insp-replaced[data-active="true"] .jaz-insp-end-slide {
+    opacity: 1 !important;
+  }
+
+  .gallery-lightbox-item.jaz-insp-replaced {
+    pointer-events: all;
+  }
+
+  /* Mobile Responsive Styles */
+  @media (max-width: 768px) {
+    .jaz-insp-end-slide {
+      padding: 15px !important;
+    }
+
+    .jaz-insp-content-container {
+      padding: 30px 20px !important;
+      margin: 0;
+      max-width: none;
+    }
+
+    .jaz-insp-title {
+      font-size: 2em !important;
+      margin-bottom: 15px;
+    }
+
+    .jaz-insp-description {
+      font-size: 1.1em !important;
+      margin-bottom: 25px;
+    }
+
+    .jaz-insp-button-container {
+      flex-direction: column !important;
+      gap: 12px !important;
+      align-items: center;
+    }
+
+    .jaz-insp-btn {
+      width: 100%;
+      max-width: 280px;
+      font-size: 1em !important;
+      padding: 14px 20px !important;
+      min-width: unset;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .jaz-insp-content-container {
+      padding: 25px 15px !important;
+    }
+
+    .jaz-insp-title {
+      font-size: 1.8em !important;
+    }
+
+    .jaz-insp-description {
+      font-size: 1em !important;
+    }
+
+    .jaz-insp-btn {
+      padding: 12px 18px !important;
+      font-size: 0.9em !important;
+    }
+  }
+
+  /* Landscape mobile adjustments */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .jaz-insp-end-slide {
+      min-height: 100vh !important;
+      align-items: flex-start !important;
+      padding-top: 40px !important;
+    }
+
+    .jaz-insp-content-container {
+      padding: 20px 25px !important;
+    }
+
+    .jaz-insp-title {
+      font-size: 1.8em !important;
+      margin-bottom: 15px;
+    }
+
+    .jaz-insp-description {
+      font-size: 1em !important;
+      margin-bottom: 20px;
+    }
+
+    .jaz-insp-button-container {
+      margin-bottom: 15px;
+    }
+  }
+</style>
+
+<!--- INSPRIATION HOME IMAGE ROLLOVER SCRIPT -->
+<script>
+  function gridItemRollover() {
+    // Find all portfolio grid items
+    const gridItems = document.querySelectorAll("#gridThumbs a.grid-item");
+
+    // Loop through each grid item
+    gridItems.forEach(function (gridItem) {
+      // Find the portfolio title within this grid item
+      const portfolioTitle = gridItem.querySelector("h3.portfolio-title");
+
+      // Find the grid-image div within this grid item
+      const gridImage = gridItem.querySelector(".grid-image");
+
+      // Check if both portfolio title and grid-image exist
+      if (portfolioTitle && gridImage) {
+        // Remember the text content
+        const titleText = portfolioTitle.textContent;
+
+        // Create the new rollover div
+        const rolloverDiv = document.createElement("div");
+        rolloverDiv.className = "inspire-rollover";
+        rolloverDiv.textContent = titleText;
+
+        // Prepend the rollover div to the grid-image div
+        gridImage.prepend(rolloverDiv);
+      }
+    });
+  }
+</script>
+
+<!-- INSPIRATION GALLERY END SLIDE SCRIPT -->
+<script>
+  // Replace the dummy image with custom end content
+  // Detects dummy by filename instead of slide position
+
+  // Configuration - change this to match your dummy image filename
+  const DUMMY_IMAGE_FILENAME = "blank-dummy-image.png";
+
+  const jazProjectName = document
+    .querySelector("title")
+    .textContent.split(" ")[0]; // Get the first word of the title
+
+  let hasReplacedDummy = false;
+  let lastSlideIndex = -1;
+  let totalSlides = 0;
+
+  function isDummySlide(slideElement) {
+    const img = slideElement.querySelector(".gallery-lightbox-item-img img");
+    if (!img) {
+      return false;
+    }
+
+    // Check both src and data-src attributes for the dummy filename
+    const src = img.getAttribute("src") || "";
+    const dataSrc = img.getAttribute("data-src") || "";
+
+    const hasDummyImage =
+      src.includes(DUMMY_IMAGE_FILENAME) ||
+      dataSrc.includes(DUMMY_IMAGE_FILENAME);
+
+    return hasDummyImage;
+  }
+
+  function manageGalleryControls() {
+    const controls = document.querySelector(".gallery-lightbox-controls");
+    const replacedSlide = document.querySelector(
+      "figure.gallery-lightbox-item.jaz-insp-replaced[data-active='true']"
+    );
+
+    if (controls) {
+      if (replacedSlide) {
+        controls.style.display = "none";
+      } else {
+        controls.style.display = "";
+      }
+    }
+  }
+
+  function getCurrentActiveSlide() {
+    const allSlides = document.querySelectorAll(".gallery-lightbox-item");
+    for (let i = 0; i < allSlides.length; i++) {
+      if (allSlides[i].getAttribute("data-active") === "true") {
+        return { element: allSlides[i], index: i };
+      }
+    }
+    return { element: null, index: -1 };
+  }
+
+  function closeLightbox() {
+    const closeBtn = document.querySelector(".gallery-lightbox-close-btn");
+    if (closeBtn) {
+      console.log("Close button found");
+      // Restore controls before closing
+      const controls = document.querySelector(".gallery-lightbox-controls");
+      if (controls) {
+        controls.style.display = "";
+      }
+      closeBtn.click();
+    } else {
+      console.log("Close button missing");
+    }
+  }
+
+  function continueToNextSlide() {
+    const nextBtn = document.querySelector(
+      ".gallery-lightbox-control[data-test='gallery-lightbox-control-next']"
+    );
+    if (nextBtn) {
+      console.log("Next button found");
+      // Restore controls before continuing
+      const controls = document.querySelector(".gallery-lightbox-controls");
+      if (controls) {
+        controls.style.display = "";
+      }
+      nextBtn.click();
+    } else {
+      console.log("Next button missing");
+    }
+  }
+
+  function createCustomEndSlideHTML() {
+    // check for previoius and next project links
+    let prevProjectLink = document.querySelector(".item-pagination-link--prev");
+    let nextProjectLink = document.querySelector(".item-pagination-link--next");
+    let hasPrevLink = prevProjectLink !== null;
+    let hasNextLink = nextProjectLink !== null;
+
+    return `
+    <div class="gallery-lightbox-item-wrapper">
+      <div class="gallery-lightbox-item-src">
+        <div class="gallery-lightbox-item-img content-fit jaz-insp-end-slide">
+          <div class="jaz-insp-content-container">
+            <h2 class="jaz-insp-title">End of Gallery</h2>
+            
+            <p class="jaz-insp-description">
+              Thanks for viewing project ${jazProjectName}!<br>Ready to explore more of our work?
+            <div class="jaz-insp-prev-next">
+              ${
+                hasPrevLink
+                  ? `<a href="${
+                      prevProjectLink.href
+                    }" class="jaz-insp-btn jaz-insp-btn-secondary">&lt; ${
+                      document.querySelector(
+                        ".item-pagination-link--prev .item-pagination-title"
+                      ).textContent
+                    }</a>`
+                  : ""
+              }
+              ${
+                hasNextLink
+                  ? `<a href="${
+                      nextProjectLink.href
+                    }" class="jaz-insp-btn jaz-insp-btn-secondary">${
+                      document.querySelector(
+                        ".item-pagination-link--next .item-pagination-title"
+                      ).textContent
+                    } &gt;</a>`
+                  : ""
+              }
+                  </div>
+            </p>            
+            <div class="jaz-insp-button-container">
+              <button onclick="continueToNextSlide()" class="jaz-insp-btn jaz-insp-btn-primary">Continue Browsing</button>
+              <button onclick="closeLightbox()" class="jaz-insp-btn jaz-insp-btn-tertiary">Close Browsing</button>
+              <a href="/inspiration" class="jaz-insp-btn jaz-insp-btn-primary">Inspiration Home</a>                            
+              <a href="/contact" class="jaz-insp-btn jaz-insp-btn-tertiary">Contact Us</a>
+            </div>
+                        
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  }
+
+  function replaceDummyImageWithEndContent() {
+    const activeSlideData = getCurrentActiveSlide();
+    const activeSlide = activeSlideData.element;
+    const currentIndex = activeSlideData.index;
+
+    if (!activeSlide) {
+      return false;
+    }
+
+    // Check if current active slide contains the dummy image
+    const isCurrentSlideDummy = isDummySlide(activeSlide);
+
+    // Only proceed if current slide is dummy AND haven't replaced it yet
+    if (!isCurrentSlideDummy || hasReplacedDummy) {
+      return false;
+    }
+
+    // Mark as replaced globally
+    hasReplacedDummy = true;
+    activeSlide.classList.add("jaz-insp-replaced");
+
+    // Store original content as backup
+    //activeSlide.setAttribute("data-original-html", activeSlide.innerHTML);
+
+    // Replace the entire content with our custom HTML
+    activeSlide.innerHTML = createCustomEndSlideHTML();
+
+    // Force a style recalculation
+    activeSlide.offsetHeight;
+
+    return true;
+  }
+
+  function checkAndReplaceIfNeeded() {
+    const activeSlideData = getCurrentActiveSlide();
+    const currentIndex = activeSlideData.index;
+
+    // Always manage controls based on current state
+    manageGalleryControls();
+
+    // If we moved to a different slide, update our tracking
+    if (currentIndex !== lastSlideIndex) {
+      lastSlideIndex = currentIndex;
+
+      const currentSlide = activeSlideData.element;
+
+      // Reset replacement state if we're not on a replaced slide
+      if (
+        currentSlide &&
+        !currentSlide.classList.contains("jaz-insp-replaced")
+      ) {
+        hasReplacedDummy = false;
+      }
+
+      // Only try to replace if we haven't replaced yet
+      if (!hasReplacedDummy) {
+        // Try to replace if current slide contains dummy image
+        replaceDummyImageWithEndContent();
+      }
+    }
+  }
+
+  // Use a simple interval to check for slide changes
+  let slideCheckInterval;
+
+  function startSlideMonitoring() {
+    // Clear any existing interval
+    if (slideCheckInterval) {
+      clearInterval(slideCheckInterval);
+    }
+
+    let pollCount = 0;
+    const maxPolls = 10;
+    const pollInterval = 300;
+
+    function pollForSlides() {
+      const initialSlideData = getCurrentActiveSlide();
+
+      if (initialSlideData.element) {
+        // Found slides, start monitoring
+        lastSlideIndex = initialSlideData.index;
+        slideCheckInterval = setInterval(checkAndReplaceIfNeeded, 150);
+        return;
+      }
+
+      pollCount++;
+      if (pollCount >= maxPolls) {
+        console.log(
+          "Failed to find gallery slides after",
+          maxPolls,
+          "attempts"
+        );
+        return;
+      }
+
+      // Try again
+      setTimeout(pollForSlides, pollInterval);
+    }
+
+    // Start polling immediately
+    pollForSlides();
+  }
+
+  function stopSlideMonitoring() {
+    if (slideCheckInterval) {
+      clearInterval(slideCheckInterval);
+      slideCheckInterval = null;
+    }
+    // Reset gallery controls and state when stopping monitoring
+    const controls = document.querySelector(".gallery-lightbox-controls");
+    if (controls) {
+      controls.style.display = "";
+    }
+    hasReplacedDummy = false;
+  }
+
+  // Event delegation for gallery links
+  function setupGalleryLinkListeners() {
+    document.addEventListener("click", function (e) {
+      if (e.target.closest(".gallery-masonry-lightbox-link")) {
+        // Reset state for new lightbox session
+        hasReplacedDummy = false;
+        lastSlideIndex = -1;
+        totalSlides = 0;
+
+        // Start monitoring after lightbox loads
+        startSlideMonitoring();
+      }
+    });
+
+    // Listen for lightbox close to clean up
+    document.addEventListener("click", function (e) {
+      if (
+        e.target.closest(".gallery-lightbox-wrapper") &&
+        e.target.classList.contains("gallery-lightbox-wrapper")
+      ) {
+        stopSlideMonitoring();
+      }
+    });
+
+    // Listen for escape key
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        stopSlideMonitoring();
+      }
+    });
+  }
+
+  // Make functions globally available
+  window.closeLightbox = closeLightbox;
+  window.continueToNextSlide = continueToNextSlide;
+</script>
+
+<!-- INSPIRATION GLOBAL SCRIPT INITIALIZATION -->
+<script>
+  // Wait for DOM to be ready and run multiple functions
+  function runInitializers() {
+    gridItemRollover();
+    setupGalleryLinkListeners();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runInitializers);
+  } else {
+    // DOM already loaded
+    runInitializers();
+  }
+</script>
+
+<script>
+  // Add slide number bugs to gallery lightbox items - separate monitoring system
+
+  let slideNumberBugs = [];
+  let isLightboxActive = false;
+  let lightboxMonitorInterval;
+  let lastActiveSlideIndex = -1;
+
+  function isLightboxVisible() {
+    const lightboxWrapper = document.querySelector(".gallery-lightbox-wrapper");
+    if (!lightboxWrapper) return false;
+
+    const style = window.getComputedStyle(lightboxWrapper);
+    return style.display !== "none" && style.visibility !== "hidden";
+  }
+
+  function hasVisibleDimensions(element) {
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function getImageDimensions(img) {
+    // Try data-image-dimensions first
+    const imageDimensions = img.getAttribute("data-image-dimensions");
+    if (imageDimensions) {
+      const [width, height] = imageDimensions.split("x").map(Number);
+      if (width && height) return { width, height };
+    }
+
+    // Try width/height attributes
+    const widthAttr = parseInt(img.getAttribute("width"));
+    const heightAttr = parseInt(img.getAttribute("height"));
+    if (widthAttr && heightAttr)
+      return { width: widthAttr, height: heightAttr };
+
+    // Try natural dimensions if loaded
+    if (img.complete && img.naturalWidth && img.naturalHeight) {
+      return { width: img.naturalWidth, height: img.naturalHeight };
+    }
+
+    return null;
+  }
+
+  function calculateImageBounds(containerRect, imageDimensions) {
+    const containerWidth = containerRect.width;
+    const containerHeight = containerRect.height;
+    const containerAspectRatio = containerWidth / containerHeight;
+    const imageAspectRatio = imageDimensions.width / imageDimensions.height;
+
+    let imageWidth, imageHeight, imageLeft, imageTop;
+
+    if (imageAspectRatio > containerAspectRatio) {
+      // Image is wider - fits to container width, letterboxed vertically
+      imageWidth = containerWidth;
+      imageHeight = containerWidth / imageAspectRatio;
+      imageLeft = 0;
+      imageTop = (containerHeight - imageHeight) / 2;
+    } else {
+      // Image is taller - fits to container height, pillarboxed horizontally
+      imageHeight = containerHeight;
+      imageWidth = containerHeight * imageAspectRatio;
+      imageTop = 0;
+      imageLeft = (containerWidth - imageWidth) / 2;
+    }
+
+    return {
+      left: imageLeft,
+      top: imageTop,
+      width: imageWidth,
+      height: imageHeight,
+      right: imageLeft + imageWidth,
+      bottom: imageTop + imageHeight,
+    };
+  }
+
+  function positionBug(bug, container, imageBounds) {
+    // Position bug at top-right of actual image with ~20px margin
+    const marginFromEdge = 20;
+
+    // Get the bug's actual rendered width
+    const bugRect = bug.getBoundingClientRect();
+    const bugWidth = bugRect.width;
+
+    // Calculate position from top-left of container
+    // Subtract bug width so the right edge is positioned with margin, not left edge
+    const bugLeft = imageBounds.right - marginFromEdge - bugWidth;
+    const bugTop = imageBounds.top + marginFromEdge;
+
+    // Use transform for precise positioning
+    bug.style.position = "absolute";
+    bug.style.left = "0";
+    bug.style.top = "0";
+    bug.style.transform = `translate(${bugLeft}px, ${bugTop}px)`;
+    bug.style.transformOrigin = "top left";
+  }
+
+  function updateBugPosition(bugData) {
+    const container = bugData.slide.querySelector(".gallery-lightbox-item-src");
+    if (!container || !hasVisibleDimensions(container)) {
+      return false;
+    }
+
+    const imageDimensions = getImageDimensions(bugData.image);
+    if (!imageDimensions) {
+      console.log("Could not get image dimensions for bug positioning");
+      return false;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const imageBounds = calculateImageBounds(containerRect, imageDimensions);
+
+    positionBug(bugData.bug, container, imageBounds);
+    return true;
+  }
+
+  function updateAllBugPositions() {
+    slideNumberBugs.forEach((bugData) => {
+      updateBugPosition(bugData);
+    });
+  }
+
+  function createSlideNumberBugs() {
+    const allSlides = document.querySelectorAll(".gallery-lightbox-item");
+    if (allSlides.length === 0) return;
+
+    // Clear existing bugs
+    slideNumberBugs.forEach((bugData) => {
+      if (bugData.bug.parentNode) {
+        bugData.bug.parentNode.removeChild(bugData.bug);
+      }
+    });
+    slideNumberBugs = [];
+
+    // Total count excludes the last slide (dummy/replacement slide)
+    const totalSlides = allSlides.length - 1;
+
+    // Add number bugs to all slides except the last one
+    for (let i = 0; i < totalSlides; i++) {
+      const slide = allSlides[i];
+      const slideContainer = slide.querySelector(".gallery-lightbox-item-img");
+      const slideImage = slide.querySelector(".gallery-lightbox-item-img img");
+
+      if (!slideContainer || !slideImage) continue;
+
+      // Create the slide number bug
+      const slideBug = document.createElement("div");
+      slideBug.className = "jaz-slide-number-bug";
+      slideBug.textContent = `${i + 1} of ${totalSlides}`;
+
+      // Store reference
+      const bugData = {
+        bug: slideBug,
+        container: slideContainer,
+        image: slideImage,
+        slide: slide,
+        slideIndex: i,
+      };
+      slideNumberBugs.push(bugData);
+
+      // Add to DOM
+      slideContainer.appendChild(slideBug);
+
+      // Try to position immediately
+      updateBugPosition(bugData);
+    }
+
+    console.log(`Created slide number bugs for ${totalSlides} slides`);
+  }
+
+  function getCurrentActiveSlideIndex() {
+    const allSlides = document.querySelectorAll(".gallery-lightbox-item");
+    for (let i = 0; i < allSlides.length; i++) {
+      if (allSlides[i].getAttribute("data-active") === "true") {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  function checkLightboxState() {
+    const lightboxVisible = isLightboxVisible();
+    const currentActiveSlide = getCurrentActiveSlideIndex();
+
+    // Lightbox opened
+    if (lightboxVisible && !isLightboxActive) {
+      isLightboxActive = true;
+      console.log("Lightbox opened, creating slide number bugs");
+
+      // Wait a moment for elements to fully render
+      setTimeout(() => {
+        createSlideNumberBugs();
+        updateAllBugPositions();
+      }, 100);
+    }
+
+    // Lightbox closed
+    if (!lightboxVisible && isLightboxActive) {
+      isLightboxActive = false;
+      lastActiveSlideIndex = -1;
+      console.log("Lightbox closed");
+    }
+
+    // Slide changed while lightbox is active
+    if (isLightboxActive && currentActiveSlide !== lastActiveSlideIndex) {
+      lastActiveSlideIndex = currentActiveSlide;
+      console.log("Slide changed to:", currentActiveSlide);
+
+      // Recalculate positions when slide changes
+      setTimeout(() => {
+        updateAllBugPositions();
+      }, 50);
+    }
+  }
+
+  function handleResize() {
+    if (isLightboxActive) {
+      updateAllBugPositions();
+    }
+  }
+
+  function startMonitoring() {
+    // Monitor lightbox state
+    lightboxMonitorInterval = setInterval(checkLightboxState, 200);
+
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(handleResize, 150);
+    });
+
+    console.log("Slide number bug monitoring started");
+  }
+
+  function stopMonitoring() {
+    if (lightboxMonitorInterval) {
+      clearInterval(lightboxMonitorInterval);
+      lightboxMonitorInterval = null;
+    }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startMonitoring);
+  } else {
+    startMonitoring();
+  }
+</script>
