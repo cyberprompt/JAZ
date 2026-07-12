@@ -109,6 +109,7 @@
       body {
         margin: 0;
         padding: 0;
+        overflow-x: hidden;
       }
       body {
         background: var(--card);
@@ -131,8 +132,9 @@
         z-index: 60;
         background: rgba(44, 49, 56, 0.45);
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         padding: 20px;
         opacity: 0;
         pointer-events: none;
@@ -147,7 +149,12 @@
         border-radius: var(--radius);
         max-width: 440px;
         width: 100%;
-        max-height: 90vh;
+        /* Positioned + sized within the visitor's visible band. --modal-top and --modal-maxh
+           are set in px by openCreate(); fallbacks keep standalone/offline centering sane.
+           Inner scroll (overflow:auto) guarantees all controls are reachable when the band
+           is short. The 40px keeps ~20px margin top+bottom inside the band. */
+        margin-top: var(--modal-top, 8vh);
+        max-height: var(--modal-maxh, 90vh);
         overflow: auto;
         box-shadow: 0 20px 60px rgba(44, 49, 56, 0.28);
         transform: translateY(8px);
@@ -3701,6 +3708,7 @@
           });
         }
         function openCreate() {
+          requestViewport(); // ask parent for the visible band (async reply repositions)
           // reset to defaults each open
           document.getElementById("cbDownload").checked = true;
           document.getElementById("cbEmailMe").checked = false;
@@ -3713,8 +3721,38 @@
             var cb = document.getElementById(id);
             cb.closest(".opt-row").classList.toggle("checked", cb.checked);
           });
+          positionModal();
           modal.classList.add("open");
         }
+        // Fit the modal inside the visitor's VISIBLE band with ~20px margins + inner scroll.
+        // Embedded: parent posts {type:"jazguide:viewport",top,height}, cached as _vp.
+        // Standalone/offline (no parent / before reply): fall back to this window's viewport.
+        var _vp = null;
+        function positionModal() {
+          var vpTop = _vp ? _vp.top : 0;
+          var vpH = _vp ? _vp.height : window.innerHeight;
+          var margin = 20;
+          var maxH = Math.max(120, vpH - margin * 2);
+          var modalEl = modal.querySelector(".modal");
+          var modalH = modalEl ? Math.min(modalEl.scrollHeight, maxH) : Math.min(480, maxH);
+          var top = vpTop + Math.max(margin, (vpH - modalH) / 2);
+          modal.style.setProperty("--modal-top", Math.round(top) + "px");
+          modal.style.setProperty("--modal-maxh", Math.round(maxH) + "px");
+        }
+        function requestViewport() {
+          if (window.parent !== window) {
+            window.parent.postMessage({ type: "jazguide:viewport?" }, "*");
+          }
+        }
+        window.addEventListener("message", function (e) {
+          var d = e.data;
+          if (!d || d.type !== "jazguide:viewport") return;
+          _vp = {
+            top: parseInt(d.top, 10) || 0,
+            height: parseInt(d.height, 10) || window.innerHeight,
+          };
+          if (modal.classList.contains("open")) positionModal();
+        });
         function closeCreate() {
           modal.classList.remove("open");
         }
