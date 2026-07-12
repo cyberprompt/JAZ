@@ -590,15 +590,34 @@
       /* Jaz's inline guidance — styled as a quote callout with a watermark */
       .jaz-note {
         position: relative;
-        overflow: hidden;
         margin: 18px auto 0;
         max-width: 64ch;
+        max-height: 18ch;
+        overflow: hidden auto; /* X: clip · Y: scroll when copy overflows */
         background: linear-gradient(135deg, rgba(76, 143, 166, 0.1), rgba(43, 160, 184, 0.05));
         border: 1px solid rgba(76, 143, 166, 0.22);
         border-left: 4px solid var(--jaz-blue);
         border-right: 4px solid var(--jaz-blue);
         border-radius: 12px;
         padding: 20px 24px 16px 58px;
+        /* Firefox scrollbar — jaz-blue thumb on translucent-blue track */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(76, 143, 166, 0.28) transparent;
+      }
+      /* WebKit scrollbar — matches the note's blue voice */
+      .jaz-note::-webkit-scrollbar {
+        width: 8px;
+      }
+      .jaz-note::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 8px 0; /* inset from the rounded corners */
+      }
+      .jaz-note::-webkit-scrollbar-thumb {
+        background: rgba(76, 143, 166, 0.28);
+        border-radius: 999px;
+      }
+      .jaz-note::-webkit-scrollbar-thumb:hover {
+        background: rgba(76, 143, 166, 0.5);
       }
       .jaz-quote-mark {
         position: absolute;
@@ -1099,12 +1118,14 @@
         align-self: center;
       }
       .money-group .opt .pri {
-        width: auto;
+        flex: 1 1 auto; /* claim leftover row width so the input can reach its 150px cap */
+        min-width: 0;
         display: flex;
         align-items: center;
         gap: 8px;
         border: none;
         background: none;
+        justify-content: flex-end;
       }
       .money-group .opt .pri .money-sign {
         flex: 0 0 auto;
@@ -1117,7 +1138,10 @@
         color: var(--teal);
       }
       .money-group .opt .pri input {
-        width: 150px;
+        flex: 1 1 auto; /* grow toward the cap; never exceeds max-width */
+        width: 100%;
+        max-width: 150px;
+        min-width: 84px;
         height: 44px;
         text-align: right;
         padding: 0 14px;
