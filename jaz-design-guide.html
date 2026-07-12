@@ -3504,7 +3504,15 @@
           document.querySelector(".pager").style.display = i === 0 && gated ? "none" : "block";
           requestAnimationFrame(function () {
             window.scrollTo({ top: 0, behavior: "auto" });
+            if (window.parent !== window) {
+              window.parent.postMessage({ type: "jazguide:scrolltop" }, "*");
+            }
+            if (window.__jazReportHeight) window.__jazReportHeight();
           });
+          // re-report after the .28s fade + leaving-panel cleanup so the frame shrinks back
+          setTimeout(function () {
+            if (window.__jazReportHeight) window.__jazReportHeight();
+          }, 340);
         }
         function openGate() {
           document.querySelector(".progress").style.display = "block";
@@ -3895,9 +3903,18 @@
         var last = 0,
           timer = null;
         function measure() {
+          // The active panel is position:relative inside #app; leaving/inactive panels are
+          // absolute (0 flow height). #app's own bottom edge therefore tracks ONLY the active
+          // panel and already includes the 140px padding that clears the fixed pager. Using
+          // body.scrollHeight instead would count the tall "leaving" panel mid-fade and lock
+          // the iframe too tall (the bottom-whitespace bug).
+          var app = document.getElementById("app");
+          var appH = app ? app.offsetTop + app.offsetHeight : 0;
           var b = document.body,
             d = document.documentElement;
-          return Math.max(b.scrollHeight, b.offsetHeight, d.scrollHeight, d.offsetHeight);
+          var bodyH = Math.max(b.offsetHeight, d.offsetHeight);
+          // Prefer the app-based height; fall back to body if app is missing.
+          return appH > 0 ? appH : bodyH;
         }
         function send() {
           var h = measure();
@@ -3906,6 +3923,7 @@
             window.parent.postMessage({ type: KEY, height: h }, "*");
           }
         }
+        window.__jazReportHeight = send;
         function ping() {
           if (timer) return;
           timer = setTimeout(function () {
