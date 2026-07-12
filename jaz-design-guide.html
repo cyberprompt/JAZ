@@ -109,7 +109,7 @@
       body {
         margin: 0;
         padding: 0;
-        overflow-x: hidden;
+        max-width: 100%;
       }
       body {
         background: var(--card);
@@ -122,9 +122,8 @@
       .wrap {
         max-width: var(--maxw);
         margin: 0 auto;
-        padding: 0 20px 140px;
+        padding: 0 20px 24px;
       }
-
       /* ---- Save My Guide chooser (modal) ---- */
       .modal-back {
         position: fixed;
@@ -1344,13 +1343,9 @@
 
       /* ---- footer nav ---- */
       .pager {
-        position: sticky;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        position: static;
         z-index: 35;
         background: rgba(251, 248, 242, 0.94);
-        backdrop-filter: blur(6px);
         border-top: 1px solid var(--line);
       }
       .pager-inner {
@@ -3941,18 +3936,20 @@
         var last = 0,
           timer = null;
         function measure() {
-          // The active panel is position:relative inside #app; leaving/inactive panels are
-          // absolute (0 flow height). #app's own bottom edge therefore tracks ONLY the active
-          // panel and already includes the 140px padding that clears the fixed pager. Using
-          // body.scrollHeight instead would count the tall "leaving" panel mid-fade and lock
-          // the iframe too tall (the bottom-whitespace bug).
+          // Height = bottom edge of the pager (the last in-flow element), which sits AFTER
+          // #app. Measuring to #app alone would clip the now in-flow pager; measuring
+          // body.scrollHeight would count the position:absolute .panel.leaving mid-fade and
+          // lock the iframe too tall (the bottom-whitespace bug). The active .panel is
+          // position:relative so #app tracks the current panel; the pager adds its own height.
           var app = document.getElementById("app");
-          var appH = app ? app.offsetTop + app.offsetHeight : 0;
+          var pager = document.querySelector(".pager");
+          var appBottom = app ? app.offsetTop + app.offsetHeight : 0;
+          var pagerBottom = pager && pager.offsetParent !== null ? pager.offsetTop + pager.offsetHeight : 0;
+          var h = Math.max(appBottom, pagerBottom);
           var b = document.body,
             d = document.documentElement;
           var bodyH = Math.max(b.offsetHeight, d.offsetHeight);
-          // Prefer the app-based height; fall back to body if app is missing.
-          return appH > 0 ? appH : bodyH;
+          return h > 0 ? h : bodyH;
         }
         function send() {
           var h = measure();
