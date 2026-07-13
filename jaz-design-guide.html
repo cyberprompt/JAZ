@@ -270,6 +270,15 @@
       .modal-actions .nav-btn {
         min-width: auto;
       }
+      /* Resume modal: buttons centered, one per line */
+      .modal-actions--stack {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-actions--stack .nav-btn {
+        min-width: 120px;
+      }
       .modal-confirm {
         font-size: 0.85rem;
         color: var(--teal-deep);
@@ -356,7 +365,7 @@
       .logo {
         display: flex;
         align-items: center;
-        gap: 9px;
+        gap: 14px;
         text-decoration: none;
         flex: 0 0 auto;
       }
@@ -2619,6 +2628,16 @@
       </div>
     </div>
 
+    <div class="modal-back" id="resumeModal" role="dialog" aria-modal="true" aria-labelledby="resumeTitle">
+      <div class="modal">
+        <h2 id="resumeTitle">Continue where you left off?</h2>
+        <div class="modal-actions modal-actions--stack">
+          <button class="nav-btn primary" id="resumeYes" type="button">Yes</button>
+          <button class="nav-btn ghost" id="resumeNo" type="button">No</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       (function () {
         "use strict";
@@ -2688,6 +2707,38 @@
         function setVal(id, v) {
           state.data[id] = v;
           persistLocal();
+        }
+        // Outbound-link opener behavior: for jazdesign.com links, if the guide was opened
+        // BY another window (window.opener exists + is usable), load the URL there instead
+        // of a new tab so the visitor returns to the site window. Falls back to a new tab
+        // everywhere opener can't be used (embedded iframe = no opener; download double-click;
+        // cross-origin block). Non-jazdesign links always open a normal new tab.
+        function isJazHost(href) {
+          try {
+            var h = new URL(href, location.href).hostname.toLowerCase();
+            return h === "jazdesign.com" || h.endsWith(".jazdesign.com");
+          } catch (e) {
+            return false;
+          }
+        }
+        function wireOpenerLink(a) {
+          a.addEventListener("click", function (e) {
+            if (!isJazHost(a.href)) return; // plain _blank
+            var opener = null;
+            try {
+              opener = window.opener;
+            } catch (err) {
+              opener = null;
+            }
+            if (!opener || opener.closed) return; // no usable opener -> _blank
+            try {
+              opener.location.href = a.href; // may throw cross-origin -> caught, _blank stays
+              opener.focus();
+              e.preventDefault();
+            } catch (err2) {
+              /* cross-origin: let the default _blank happen */
+            }
+          });
         }
 
         // ---- field renderers ----
@@ -3377,6 +3428,7 @@
                   a.href = s.imageHref;
                   a.target = "_blank";
                   a.rel = "noopener";
+                  wireOpenerLink(a);
                   a.appendChild(im);
                   d.appendChild(a);
                 } else {
@@ -3394,6 +3446,7 @@
                 buy.href = s.imageHref;
                 buy.target = "_blank";
                 buy.rel = "noopener";
+                wireOpenerLink(buy);
                 buyRow.appendChild(buy);
                 d.appendChild(buyRow);
               }
@@ -3636,6 +3689,13 @@
           setTimeout(function () {
             if (window.__jazReportHeight) window.__jazReportHeight();
           }, 340);
+          // remember last real panel (not the gated cover) so a return visit can offer
+          // "Continue where you left off?". __lastPanel rides state.data -> localStorage +
+          // per-email Supabase sync; unknown key, so the digest ignores it.
+          if (!gated && i >= 1) {
+            state.data.__lastPanel = i;
+            persistLocal();
+          }
         }
         function openGate() {
           document.querySelector(".progress").style.display = "block";
@@ -4066,6 +4126,8 @@
             goTo(current - 1);
           });
           document.getElementById("createBtn").addEventListener("click", openCreate);
+          var logoLink = document.querySelector(".logo");
+          if (logoLink) wireOpenerLink(logoLink);
           // chooser wiring
           document.getElementById("createCancel").addEventListener("click", closeCreate);
           document.getElementById("createConfirm").addEventListener("click", runCreate);
@@ -4100,6 +4162,7 @@
                 a.href = ft.url;
                 a.target = "_blank";
                 a.rel = "noopener";
+                wireOpenerLink(a);
                 foot.appendChild(a);
               } else {
                 foot.textContent = ft.text || "";
@@ -4108,7 +4171,29 @@
             app.appendChild(foot);
           })();
 
-          goTo(gated ? 0 : 1);
+          // Opening state:
+          //  - gated (no email) -> cover/Welcome
+          //  - returning w/ a valid saved panel -> ask "Continue where you left off?"
+          //  - returning, no saved panel -> Intro
+          var lp = Number(state.data.__lastPanel);
+          var canResume = !gated && Number.isInteger(lp) && lp >= 1 && lp < panels.length;
+          if (gated) {
+            goTo(0);
+          } else if (canResume) {
+            goTo(1); // paint Intro underneath so cancelling/closing lands somewhere sane
+            var rm = document.getElementById("resumeModal");
+            rm.classList.add("open");
+            document.getElementById("resumeYes").addEventListener("click", function () {
+              rm.classList.remove("open");
+              goTo(lp);
+            });
+            document.getElementById("resumeNo").addEventListener("click", function () {
+              rm.classList.remove("open");
+              goTo(1);
+            });
+          } else {
+            goTo(1);
+          }
           setSync("saved");
         }
         boot();
