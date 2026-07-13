@@ -2672,6 +2672,7 @@
         var navStops = MODEL.sections.slice(); // rail shows: intro + all sections (cover added separately)
         var current = 0; // index into panels[]
         var gated = true; // email gate active until email present
+        var BOOTING = true; // suppress __lastPanel writes during boot paint
 
         function loadState() {
           var base = { email: "", data: {}, created_at: null, updated_at: null };
@@ -3658,7 +3659,7 @@
           // remember last real panel (not the gated cover) so a return visit can offer
           // "Continue where you left off?". __lastPanel rides state.data -> localStorage +
           // per-email Supabase sync; unknown key, so the digest ignores it.
-          if (!gated && i >= 1) {
+          if (!gated && i >= 1 && !BOOTING) {
             state.data.__lastPanel = i;
             persistLocal();
           }
@@ -4143,65 +4144,23 @@
           if (gated) {
             goTo(0);
           } else if (canResume) {
-            goTo(1); // paint Intro underneath so cancelling/closing lands somewhere sane
+            goTo(1); // base paint; BOOTING suppresses the __lastPanel write here
             var rm = document.getElementById("resumeModal");
-            /* TEMP DIAGNOSTIC — remove between these markers when done */
-            var _src = (function () {
-              try {
-                var l = JSON.parse(localStorage.getItem(LSKEY) || "null");
-                return l && l.data && l.data.__lastPanel != null ? "local" : "server/seed";
-              } catch (e) {
-                return "err";
-              }
-            })();
-            var _dbg = document.createElement("div");
-            _dbg.id = "resumeDbg";
-            _dbg.style.cssText =
-              "margin-top:12px;padding:8px;font:12px/1.4 monospace;white-space:pre-wrap;color:#2C3138;background:#FBF8F2;border:1px solid #4C8FA6;border-radius:6px;text-align:left;";
-            _dbg.textContent =
-              "lp=" +
-              lp +
-              "  canResume=" +
-              canResume +
-              "  gated=" +
-              gated +
-              "\npanels.length=" +
-              panels.length +
-              "  raw=" +
-              JSON.stringify(state.data.__lastPanel) +
-              "\n__lastPanel source=" +
-              _src +
-              "\nonline=" +
-              (typeof isOnline === "function" ? isOnline() : "n/a") +
-              " SERVER_ENABLED=" +
-              SERVER_ENABLED +
-              "\n(waiting for Yes/No)";
-            rm.querySelector(".modal").appendChild(_dbg);
-            /* END TEMP DIAGNOSTIC */
             rm.classList.add("open");
             document.getElementById("resumeYes").addEventListener("click", function () {
               rm.classList.remove("open");
+              BOOTING = false;
               goTo(lp);
-              /* TEMP DIAGNOSTIC */
-              _dbg.textContent =
-                "YES fired. goTo(" +
-                lp +
-                ") called.\ncurrent now=" +
-                current +
-                "\nactive panel index=" +
-                [].slice.call(document.querySelectorAll("#app .panel")).findIndex(function (n) {
-                  return n.classList.contains("active");
-                });
-              rm.classList.add("open"); // keep modal visible to read the readout
-              /* END TEMP DIAGNOSTIC */
             });
             document.getElementById("resumeNo").addEventListener("click", function () {
               rm.classList.remove("open");
+              BOOTING = false;
               goTo(1);
             });
           } else {
             goTo(1);
           }
+          if (!canResume) BOOTING = false;
           setSync("saved");
         }
         boot();
