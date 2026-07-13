@@ -387,11 +387,7 @@
         font-size: 11px;
         padding-bottom: 4px;
       }
-      /* embedded on the live site: iframe hides the redundant logo image; the
-         wordmark then sits flush-left where the logo was. Standalone keeps the logo. */
-      body.embedded .logo-img {
-        display: none;
-      }
+      /* logo now always shown (embedded + standalone); prior body.embedded hide removed */
       @media (max-width: 520px) {
         .logo-img {
           height: 28px;
