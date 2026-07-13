@@ -2708,38 +2708,6 @@
           state.data[id] = v;
           persistLocal();
         }
-        // Outbound-link opener behavior: for jazdesign.com links, if the guide was opened
-        // BY another window (window.opener exists + is usable), load the URL there instead
-        // of a new tab so the visitor returns to the site window. Falls back to a new tab
-        // everywhere opener can't be used (embedded iframe = no opener; download double-click;
-        // cross-origin block). Non-jazdesign links always open a normal new tab.
-        function isJazHost(href) {
-          try {
-            var h = new URL(href, location.href).hostname.toLowerCase();
-            return h === "jazdesign.com" || h.endsWith(".jazdesign.com");
-          } catch (e) {
-            return false;
-          }
-        }
-        function wireOpenerLink(a) {
-          a.addEventListener("click", function (e) {
-            if (!isJazHost(a.href)) return; // plain _blank
-            var opener = null;
-            try {
-              opener = window.opener;
-            } catch (err) {
-              opener = null;
-            }
-            if (!opener || opener.closed) return; // no usable opener -> _blank
-            try {
-              opener.location.href = a.href; // may throw cross-origin -> caught, _blank stays
-              opener.focus();
-              e.preventDefault();
-            } catch (err2) {
-              /* cross-origin: let the default _blank happen */
-            }
-          });
-        }
 
         // ---- field renderers ----
         function renderTextarea(f) {
@@ -3428,7 +3396,6 @@
                   a.href = s.imageHref;
                   a.target = "_blank";
                   a.rel = "noopener";
-                  wireOpenerLink(a);
                   a.appendChild(im);
                   d.appendChild(a);
                 } else {
@@ -3446,7 +3413,6 @@
                 buy.href = s.imageHref;
                 buy.target = "_blank";
                 buy.rel = "noopener";
-                wireOpenerLink(buy);
                 buyRow.appendChild(buy);
                 d.appendChild(buyRow);
               }
@@ -4126,8 +4092,6 @@
             goTo(current - 1);
           });
           document.getElementById("createBtn").addEventListener("click", openCreate);
-          var logoLink = document.querySelector(".logo");
-          if (logoLink) wireOpenerLink(logoLink);
           // chooser wiring
           document.getElementById("createCancel").addEventListener("click", closeCreate);
           document.getElementById("createConfirm").addEventListener("click", runCreate);
@@ -4162,7 +4126,6 @@
                 a.href = ft.url;
                 a.target = "_blank";
                 a.rel = "noopener";
-                wireOpenerLink(a);
                 foot.appendChild(a);
               } else {
                 foot.textContent = ft.text || "";
@@ -4182,10 +4145,55 @@
           } else if (canResume) {
             goTo(1); // paint Intro underneath so cancelling/closing lands somewhere sane
             var rm = document.getElementById("resumeModal");
+            /* TEMP DIAGNOSTIC — remove between these markers when done */
+            var _src = (function () {
+              try {
+                var l = JSON.parse(localStorage.getItem(LSKEY) || "null");
+                return l && l.data && l.data.__lastPanel != null ? "local" : "server/seed";
+              } catch (e) {
+                return "err";
+              }
+            })();
+            var _dbg = document.createElement("div");
+            _dbg.id = "resumeDbg";
+            _dbg.style.cssText =
+              "margin-top:12px;padding:8px;font:12px/1.4 monospace;white-space:pre-wrap;color:#2C3138;background:#FBF8F2;border:1px solid #4C8FA6;border-radius:6px;text-align:left;";
+            _dbg.textContent =
+              "lp=" +
+              lp +
+              "  canResume=" +
+              canResume +
+              "  gated=" +
+              gated +
+              "\npanels.length=" +
+              panels.length +
+              "  raw=" +
+              JSON.stringify(state.data.__lastPanel) +
+              "\n__lastPanel source=" +
+              _src +
+              "\nonline=" +
+              (typeof isOnline === "function" ? isOnline() : "n/a") +
+              " SERVER_ENABLED=" +
+              SERVER_ENABLED +
+              "\n(waiting for Yes/No)";
+            rm.querySelector(".modal").appendChild(_dbg);
+            /* END TEMP DIAGNOSTIC */
             rm.classList.add("open");
             document.getElementById("resumeYes").addEventListener("click", function () {
               rm.classList.remove("open");
               goTo(lp);
+              /* TEMP DIAGNOSTIC */
+              _dbg.textContent =
+                "YES fired. goTo(" +
+                lp +
+                ") called.\ncurrent now=" +
+                current +
+                "\nactive panel index=" +
+                [].slice.call(document.querySelectorAll("#app .panel")).findIndex(function (n) {
+                  return n.classList.contains("active");
+                });
+              rm.classList.add("open"); // keep modal visible to read the readout
+              /* END TEMP DIAGNOSTIC */
             });
             document.getElementById("resumeNo").addEventListener("click", function () {
               rm.classList.remove("open");
