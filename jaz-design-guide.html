@@ -1510,7 +1510,7 @@
             "text": "jazdesign.com/guide",
             "url": "https://www.jazdesign.com/guide"
           },
-          "schemaVersion": 13,
+          "schemaVersion": 14,
           "sourcePdf": "guide_optimizedFINAL.pdf",
           "notes": "Field schema extracted from the 12-page PDF. Drives the HTML template, autosave keys, and the Supabase JSON payload. Every input field has a stable `id` used as the storage key; ids are never renamed once shipped (renaming breaks saved records).",
           "fieldTypes": {
@@ -1958,8 +1958,6 @@
                 "type": "checkbox_group",
                 "label": "Counters",
                 "hint": "Check all that apply",
-                "moneyTotalId": "s2_counters_backsplash_walls_amount",
-                "note": "Counters/Backsplash/Walls share one $ amount in the PDF.",
                 "options": [
                   {
                     "id": "quartz",
@@ -1993,6 +1991,11 @@
                 }
               },
               {
+                "id": "s2_counters_amount",
+                "type": "money",
+                "label": "Counters Amount"
+              },
+              {
                 "id": "s2_backsplash",
                 "type": "checkbox_group",
                 "label": "Back splash",
@@ -2019,6 +2022,11 @@
                 }
               },
               {
+                "id": "s2_backsplash_amount",
+                "type": "money",
+                "label": "Backsplash Amount"
+              },
+              {
                 "id": "s2_walls",
                 "type": "checkbox_group",
                 "label": "Walls",
@@ -2040,9 +2048,9 @@
                 }
               },
               {
-                "id": "s2_counters_backsplash_walls_amount",
+                "id": "s2_walls_amount",
                 "type": "money",
-                "label": "Counters, Back splash & Walls amount"
+                "label": "Walls Amount"
               },
               {
                 "id": "s2_lighting_electrical",
