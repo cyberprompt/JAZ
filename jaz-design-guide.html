@@ -960,6 +960,7 @@
         max-width: 420px;
         margin: 0 auto;
         flex-wrap: wrap;
+        justify-content: center;
       }
       .gate input {
         flex: 1 1 220px;
@@ -1076,6 +1077,7 @@
       .pri-row {
         align-items: center;
         touch-action: none;
+        cursor: grab;
         transition:
           transform 0.16s ease,
           box-shadow 0.16s ease;
@@ -2894,7 +2896,9 @@
             // as the target slot changes, the CSS transition animates them smoothly
             // (the old insertBefore approach never changed a transform, so nothing
             // animated). Order is committed to the DOM once, on drop. (S19 rewrite.)
-            handle.addEventListener("pointerdown", function (e) {
+            row.addEventListener("pointerdown", function (e) {
+              // whole row is the drag hit area; let the checkbox toggle normally
+              if (e.target.closest("input")) return;
               e.preventDefault();
               var rows = Array.prototype.slice.call(ranked.children);
               var grabIndex = rows.indexOf(row);
