@@ -315,21 +315,43 @@
         width: auto;
         display: block;
       }
-      .logo small {
+      .wm {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.15;
+      }
+      .wm-name {
+        color: var(--teal-deep);
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.01em;
+      }
+      .wm-name:empty {
+        display: none;
+      }
+      .wm-title {
         color: var(--green);
         letter-spacing: 0.22em;
         font-weight: 600;
         font-size: 11px;
-        align-self: center;
         padding-bottom: 4px;
+      }
+      /* embedded on the live site: iframe hides the redundant logo image; the
+         wordmark then sits flush-left where the logo was. Standalone keeps the logo. */
+      body.embedded .logo-img {
+        display: none;
       }
       @media (max-width: 520px) {
         .logo-img {
           height: 28px;
         }
-        .logo small {
+        .wm-title {
           font-size: 10px;
         } /* keep GUIDE label; there's room */
+        .wm-name {
+          font-size: 12px;
+        }
         .topbar-inner {
           gap: 10px;
           padding: 10px 16px;
@@ -1455,7 +1477,10 @@
             src="https://images.squarespace-cdn.com/content/v1/684daa70ee27897c73ed1545/72b11084-0a73-4cf9-8055-14596d24e2a3/JDFinalLogo.C.png?format=1500w"
             alt="JAZ DESIGN"
             class="logo-img" />
-          <small>KITCHEN GUIDE</small>
+          <span class="wm">
+            <span class="wm-name" id="wmName"></span>
+            <span class="wm-title">KITCHEN GUIDE</span>
+          </span>
         </a>
         <span class="sync" id="syncState"><span class="sync-dot"></span><span id="syncText">Waiting</span></span>
         <button class="save-btn" id="createBtn" type="button">Save My Guide</button>
@@ -3226,6 +3251,7 @@
             function proceed() {
               btn.disabled = false;
               btn.textContent = lbl;
+              paintWordmark();
               persistLocal();
               gated = false;
               openGate();
@@ -3887,6 +3913,13 @@
         }
 
         // ---- boot ----
+        function paintWordmark() {
+          var eln = document.getElementById("wmName");
+          if (!eln) return;
+          var email = (state && state.email) || "";
+          var local = email ? String(email).split("@")[0] : "";
+          eln.textContent = local ? local + "'s" : "";
+        }
         function boot() {
           var app = document.getElementById("app");
           app.innerHTML = "";
@@ -3903,6 +3936,7 @@
           if (state.email) {
             gated = false;
           }
+          paintWordmark();
           document.getElementById("nextBtn").addEventListener("click", function () {
             if (current >= panels.length - 1) {
               openCreate();
@@ -3929,19 +3963,25 @@
           });
           window.addEventListener("online", syncOptAvailability);
           window.addEventListener("offline", syncOptAvailability);
+
           (function () {
+            // embedded on the live site: the bottom jazdesign.com/guide link is redundant
+            // with the site chrome, so hide it (keep the .foot element for later use).
+            var embedded = window.parent !== window;
             var ft = MODEL.meta.footer;
             if (typeof ft === "string") ft = { text: ft, url: "" };
             ft = ft || { text: "jazdesign.com/guide", url: "" };
             var foot = el("div", "foot");
-            if (ft.url) {
-              var a = el("a", "foot-link", ft.text || ft.url);
-              a.href = ft.url;
-              a.target = "_blank";
-              a.rel = "noopener";
-              foot.appendChild(a);
-            } else {
-              foot.textContent = ft.text || "";
+            if (!embedded) {
+              if (ft.url) {
+                var a = el("a", "foot-link", ft.text || ft.url);
+                a.href = ft.url;
+                a.target = "_blank";
+                a.rel = "noopener";
+                foot.appendChild(a);
+              } else {
+                foot.textContent = ft.text || "";
+              }
             }
             app.appendChild(foot);
           })();
@@ -3953,6 +3993,9 @@
       })();
     </script>
     <script>
+      /* mark embedded early so CSS can hide the redundant logo (see body.embedded rules) */
+      if (window.parent !== window) document.body.classList.add("embedded");
+
       /* iframe height reporter — inert unless embedded (offline download opens standalone) */
       (function () {
         if (window.parent === window) return;
@@ -4002,5 +4045,50 @@
         window.addEventListener("resize", ping);
       })();
     </script>
+
+    <!-- ===== AD-HOCK IMAGE INJECTION SCRIPT ===== -->
+    <style>
+      /* mirrors .intro-img / .cover-img styling */
+      .cab-img-temp {
+        width: 100%;
+        max-width: 94%;
+        aspect-ratio: 16/11;
+        object-fit: cover;
+        border-radius: 10px;
+        display: block;
+        margin: 24px auto 4px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        background: #ebe7dc;
+      }
+    </style>
+    <script>
+      (function () {
+        function inject() {
+          var groups = document.querySelectorAll("#app .panel.active .field.money-group");
+          var box = [].find.call(groups, function (el) {
+            var q = el.querySelector("label.q");
+            return q && /cabinets\s*&\s*storage/i.test(q.textContent);
+          });
+          if (!box || box.parentNode.querySelector(".cab-img-temp")) return;
+          var img = document.createElement("img");
+          img.className = "cab-img-temp";
+          img.alt = "Kitchen design collage";
+          img.src =
+            "https://images.squarespace-cdn.com/content/684daa70ee27897c73ed1545/8c869ce3-ba7b-4faa-91b9-c9bbe9529fe2/guide-kitchen-collage.jpg?content-type=image%2Fjpeg";
+          box.insertAdjacentElement("afterend", img); // directly below the Cabinets & Storage group
+          if (window.__jazReportHeight) window.__jazReportHeight(); // refit iframe
+        }
+        function maybe() {
+          setTimeout(inject, 60);
+        }
+        document.addEventListener("click", function () {
+          setTimeout(maybe, 360);
+        });
+        window.addEventListener("load", function () {
+          setTimeout(maybe, 400);
+        });
+      })();
+    </script>
+    <!-- ===== END AD-HOCK IMAGE INJECTION ===== -->
   </body>
 </html>
