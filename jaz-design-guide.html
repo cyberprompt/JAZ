@@ -286,6 +286,56 @@
         }
       }
 
+      /* email-recipients sub-form, revealed when Email Guide is ticked */
+      .email-sub {
+        border-left: 3px solid var(--teal);
+        padding: 4px 0 4px 14px;
+        margin: 2px 0 14px 30px;
+        display: none;
+      }
+      .email-sub.show {
+        display: block;
+      }
+      .email-sub label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        margin: 9px 0 3px;
+      }
+      .email-sub input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-family: var(--sans);
+        font-size: 0.92rem;
+        color: var(--ink);
+      }
+      .email-me-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 4px 0 2px;
+      }
+      .email-me-row input[type="checkbox"] {
+        width: auto;
+        flex: 0 0 auto;
+      }
+      .email-me-row .to-me {
+        font-size: 0.88rem;
+        color: var(--ink);
+      }
+      .email-me-row .to-me .addr {
+        color: var(--ink-soft);
+      }
+      .email-sub .field-err {
+        color: var(--accent-deep);
+        font-size: 0.8rem;
+        margin-top: 4px;
+        min-height: 1em;
+      }
+
       /* ---- top brand bar ---- */
       .topbar {
         position: sticky;
@@ -1582,11 +1632,11 @@
               "class": ""
             },
             "optEmailTitle": {
-              "text": "Email it to me",
+              "text": "Email Guide",
               "class": ""
             },
             "optEmailDesc": {
-              "text": "Sends the guide to the email address you provided so you have it on hand.",
+              "text": "Send a copy to yourself, another address, or both.",
               "class": ""
             },
             "optJazTitle": {
@@ -1611,6 +1661,8 @@
             }
           },
           "strings": {
+            "emailToMeLabel": "Email to me",
+            "emailCopyToLabel": "Send copy to:",
             "contactEmailLabel": "Your email (shared with JAZ Design)",
             "contactNameLabel": "Name",
             "contactPhoneLabel": "Phone",
@@ -2517,6 +2569,18 @@
             >
           </span>
         </label>
+
+        <!-- revealed only when Email Guide is ticked -->
+        <div class="email-sub" id="emailSub">
+          <div class="email-me-row">
+            <input type="checkbox" id="cbEmailToMe" checked />
+            <span class="to-me" data-copy-str="emailToMeLabel">Email to me</span>
+            <span class="to-me addr" id="emailToMeAddr"></span>
+          </div>
+          <label data-copy-str="emailCopyToLabel" for="emailCopyTo">Send copy to:</label>
+          <input type="email" id="emailCopyTo" autocomplete="email" placeholder="name@example.com" />
+          <div class="field-err" id="emailErr" aria-live="polite"></div>
+        </div>
 
         <label class="opt-row" id="optSendJaz">
           <input type="checkbox" id="cbSendJaz" />
@@ -3735,6 +3799,7 @@
               email: state.email,
               data: state.data,
               sendToUser: !!opts.sendToUser,
+              recipients: opts.recipients || null,
               sendToJaz: !!opts.sendToJaz,
               contact: opts.contact || null,
               filledHtml: opts.sendToUser ? assembleFilledHTML() : null,
@@ -3769,9 +3834,13 @@
           document.getElementById("cbDownload").checked = true;
           document.getElementById("cbEmailMe").checked = false;
           document.getElementById("cbSendJaz").checked = false;
+          document.getElementById("cbEmailToMe").checked = true;
+          document.getElementById("emailCopyTo").value = "";
+          document.getElementById("emailErr").textContent = "";
           document.getElementById("createConfirmMsg").textContent = "";
           syncOptAvailability();
           syncContactSub();
+          syncEmailSub();
           // reflect checkbox state in row highlight
           ["cbDownload", "cbEmailMe", "cbSendJaz"].forEach(function (id) {
             var cb = document.getElementById(id);
@@ -3840,6 +3909,14 @@
             if (inp) inp.value = state.data[k] != null ? state.data[k] : "";
           });
         }
+        // Reveal the email recipients sub-form when "Email Guide" is ticked; show the
+        // account email beside the "Email to me" checkbox for confirmation.
+        function syncEmailSub() {
+          var on = document.getElementById("cbEmailMe").checked;
+          document.getElementById("emailSub").classList.toggle("show", on);
+          document.getElementById("emailToMeAddr").textContent = state.email ? "(" + state.email + ")" : "";
+          if (!on) document.getElementById("emailErr").textContent = "";
+        }
         function captureContact() {
           CONTACT_KEYS.forEach(function (k) {
             var inp = document.getElementById(k);
@@ -3849,13 +3926,46 @@
           });
           persistLocal();
         }
+        function isValidEmail(v) {
+          return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test((v || "").trim());
+        }
+        // Build the "Email Guide" recipient list from the two controls.
+        // Returns {ok, recipients[]} or {ok:false, err} for inline feedback.
+        function buildEmailRecipients() {
+          var toMe = document.getElementById("cbEmailToMe").checked;
+          var copyRaw = document.getElementById("emailCopyTo").value;
+          var copy = (copyRaw || "").trim();
+          if (copy && !isValidEmail(copy)) return { ok: false, err: "invalid-copy" };
+          var list = [];
+          if (toMe && state.email) list.push(state.email.trim().toLowerCase());
+          if (copy) list.push(copy.toLowerCase());
+          list = list.filter(function (x, i) {
+            return list.indexOf(x) === i;
+          });
+          if (!list.length) return { ok: false, err: "empty" };
+          return { ok: true, recipients: list };
+        }
 
         function runCreate() {
           var wantDownload = document.getElementById("cbDownload").checked;
           var wantEmailMe = document.getElementById("cbEmailMe").checked;
           var wantSendJaz = document.getElementById("cbSendJaz").checked;
           var msg = document.getElementById("createConfirmMsg");
+          var emailErr = document.getElementById("emailErr");
           var done = [];
+          emailErr.textContent = "";
+
+          // Gate the Email Guide recipients before doing anything.
+          var recips = null;
+          if (wantEmailMe) {
+            var rr = buildEmailRecipients();
+            if (!rr.ok) {
+              emailErr.textContent =
+                rr.err === "invalid-copy" ? "That email doesn’t look right." : "Add an address or check “Email to me”.";
+              return;
+            }
+            recips = rr.recipients;
+          }
 
           if (wantSendJaz) captureContact();
 
@@ -3867,11 +3977,12 @@
           if (wantEmailMe || wantSendJaz) {
             sendViaServer({
               sendToUser: wantEmailMe,
+              recipients: recips,
               sendToJaz: wantSendJaz,
               contact: wantSendJaz ? pick(state.data, CONTACT_KEYS) : null,
             })
               .then(function () {
-                if (wantEmailMe) done.push("Emailed to you");
+                if (wantEmailMe) done.push("Emailed");
                 if (wantSendJaz) done.push("Sent to JAZ Design");
                 msg.textContent = done.join(" · ") + ".";
                 markSynced();
@@ -3963,6 +4074,10 @@
           document.getElementById("createCancel").addEventListener("click", closeCreate);
           document.getElementById("createConfirm").addEventListener("click", runCreate);
           document.getElementById("cbSendJaz").addEventListener("change", syncContactSub);
+          document.getElementById("cbEmailMe").addEventListener("change", syncEmailSub);
+          document.getElementById("emailCopyTo").addEventListener("input", function () {
+            document.getElementById("emailErr").textContent = "";
+          });
           ["cbDownload", "cbEmailMe", "cbSendJaz"].forEach(function (id) {
             var cb = document.getElementById(id);
             cb.addEventListener("change", function () {
