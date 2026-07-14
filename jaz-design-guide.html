@@ -1526,6 +1526,72 @@
     </style>
   </head>
   <body>
+    <!--=== TEMP LOCAL STORAGE EMAIL DEBUG ===-->
+
+    <div
+      id="jazDiag"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 99999;
+        background: #2c3138;
+        color: #7cfc9e;
+        font: 12px/1.4 monospace;
+        padding: 8px 12px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      "></div>
+    <script>
+      (function () {
+        function paint() {
+          var raw = null,
+            parsed = null,
+            err = "";
+          try {
+            raw = localStorage.getItem("jazguide:data");
+          } catch (e) {
+            err = "READ FAIL: " + e.message;
+          }
+          try {
+            parsed = raw ? JSON.parse(raw) : null;
+          } catch (e) {
+            err = "PARSE FAIL: " + e.message;
+          }
+          var email = parsed && parsed.email ? parsed.email : null;
+          var lp = parsed && parsed.data ? parsed.data.__lastPanel : undefined;
+          var out =
+            "localStorage jazguide:data: " +
+            (raw === null ? "ABSENT (key not found)" : "PRESENT (" + raw.length + " chars)") +
+            "\n" +
+            "email in storage: " +
+            (email ? JSON.stringify(email) : "NONE") +
+            "\n" +
+            "__lastPanel: " +
+            (lp === undefined ? "unset" : lp) +
+            "\n" +
+            "storage available: " +
+            (function () {
+              try {
+                localStorage.setItem("__t", "1");
+                localStorage.removeItem("__t");
+                return "YES";
+              } catch (e) {
+                return "NO — " + e.message;
+              }
+            })() +
+            (err ? "\nERROR: " + err : "");
+          document.getElementById("jazDiag").textContent = out;
+        }
+        document.addEventListener("DOMContentLoaded", paint);
+        setTimeout(paint, 500);
+      })();
+    </script>
+
+    <!--=== END TEMP LOCAL STORAGE EMAIL DEBUG ===-->
+
     <header class="topbar">
       <div class="topbar-inner">
         <a class="logo" href="https://jazdesign.com" target="_blank" rel="noopener">
