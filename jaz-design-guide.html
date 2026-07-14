@@ -270,14 +270,18 @@
       .modal-actions .nav-btn {
         min-width: auto;
       }
-      /* Resume modal: buttons centered, one per line */
-      .modal-actions--stack {
-        flex-direction: column;
+      /* Resume + Continuing modals: centered text, buttons in one centered row */
+      #resumeModal .modal,
+      #continuingModal .modal {
+        text-align: center;
+      }
+      .modal-actions--row {
+        flex-direction: row;
         align-items: center;
         justify-content: center;
       }
-      .modal-actions--stack .nav-btn {
-        min-width: 120px;
+      .modal-actions--row .nav-btn {
+        min-width: 96px;
       }
       .modal-confirm {
         font-size: 0.85rem;
@@ -2631,10 +2635,16 @@
     <div class="modal-back" id="resumeModal" role="dialog" aria-modal="true" aria-labelledby="resumeTitle">
       <div class="modal">
         <h2 id="resumeTitle">Continue where you left off?</h2>
-        <div class="modal-actions modal-actions--stack">
+        <div class="modal-actions modal-actions--row">
           <button class="nav-btn primary" id="resumeYes" type="button">Yes</button>
           <button class="nav-btn ghost" id="resumeNo" type="button">No</button>
         </div>
+      </div>
+    </div>
+
+    <div class="modal-back" id="continuingModal" role="dialog" aria-modal="true" aria-labelledby="continuingTitle">
+      <div class="modal">
+        <h2 id="continuingTitle">Continuing…</h2>
       </div>
     </div>
 
@@ -4143,6 +4153,15 @@
           var canResume = !gated && Number.isInteger(lp) && lp >= 1 && lp < panels.length;
           if (gated) {
             goTo(0);
+          } else if (canResume && lp === 1) {
+            // already on the last-viewed panel: no choice needed, just acknowledge
+            goTo(1);
+            BOOTING = false;
+            var cm = document.getElementById("continuingModal");
+            cm.classList.add("open");
+            setTimeout(function () {
+              cm.classList.remove("open");
+            }, 1500);
           } else if (canResume) {
             goTo(1); // base paint; BOOTING suppresses the __lastPanel write here
             var rm = document.getElementById("resumeModal");
@@ -4161,6 +4180,8 @@
             goTo(1);
           }
           if (!canResume) BOOTING = false;
+          // Safari (embedded) has been observed showing the chooser on reopen; force it shut.
+          document.getElementById("createModal").classList.remove("open");
           setSync("saved");
         }
         boot();
