@@ -283,6 +283,253 @@
       .modal-actions--row .nav-btn {
         min-width: 96px;
       }
+      /* ── Cost-totals drawer: slides in from the right, fits the visible band ── */
+      .drawer-back {
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        background: rgba(44, 49, 56, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .drawer-back.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .drawer {
+        position: absolute;
+        right: 0;
+        /* --drawer-top / --drawer-maxh set in px by openReceipt() from the reported band;
+           fallbacks keep standalone/offline sane. Inner scroll for long receipts. */
+        top: var(--drawer-top, 0);
+        max-height: var(--drawer-maxh, 100%);
+        width: 88%;
+        max-width: 360px;
+        background: var(--paper, #fbf8f2);
+        box-shadow: -14px 0 40px rgba(44, 49, 56, 0.22);
+        border-top-left-radius: 14px;
+        border-bottom-left-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transform: translateX(100%);
+        transition: transform 0.28s ease;
+      }
+      .drawer-back.open .drawer {
+        transform: translateX(0);
+      }
+      .drawer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px 10px;
+        flex: 0 0 auto;
+      }
+      .drawer-head h2 {
+        font-family: var(--serif);
+        font-size: 1.1rem;
+        margin: 0;
+        color: var(--ink);
+      }
+      .drawer-close {
+        border: none;
+        background: transparent;
+        color: var(--ink-soft);
+        cursor: pointer;
+        padding: 4px;
+        line-height: 0;
+        border-radius: 6px;
+      }
+      .drawer-close:hover {
+        background: rgba(44, 49, 56, 0.08);
+      }
+      .drawer-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 16px 18px;
+      }
+      /* ── receipt contents ── */
+      .rcpt-ceilings {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .rcpt-ceil-col {
+        flex: 1;
+        text-align: center;
+      }
+      .rcpt-ceil-card {
+        background: #fff;
+        border: 0.5px solid #e6e0d4;
+        border-radius: 10px;
+        padding: 9px 6px;
+      }
+      .rcpt-ceil-label {
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #8a8578;
+      }
+      .rcpt-ceil-val {
+        font-family: var(--mono, ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace);
+        font-size: 1.1rem;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+      }
+      .rcpt-ceil-delta {
+        font-family: var(--mono, ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        margin-top: 5px;
+        color: var(--ink);
+      }
+      .rcpt-ceil-delta.over {
+        color: #c0392b;
+      }
+      .rcpt-barwrap {
+        margin: 2px 0 14px;
+      }
+      .rcpt-bar {
+        position: relative;
+        height: 16px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #ece7dc;
+        display: flex;
+      }
+      .rcpt-seg {
+        height: 100%;
+      }
+      .rcpt-wash {
+        position: absolute;
+        inset: 0;
+        background: rgba(214, 58, 58, 0.32);
+      }
+      .rcpt-ticks {
+        position: relative;
+        height: 14px;
+        margin-top: 2px;
+        font-size: 9px;
+        color: #8a8578;
+        font-variant-numeric: tabular-nums;
+      }
+      .rcpt-tick {
+        position: absolute;
+        top: -18px;
+        height: 18px;
+        width: 0;
+      }
+      .rcpt-tick.comfort {
+        border-left: 2px dashed var(--jaz-blue);
+      }
+      .rcpt-tick.max {
+        border-left: 2px dashed var(--accent-deep, #a85a2d);
+      }
+      .rcpt-tick-label {
+        position: absolute;
+        transform: translateX(-50%);
+        white-space: nowrap;
+      }
+      .rcpt-warn {
+        font-size: 10px;
+        color: #c0392b;
+        font-weight: 500;
+        text-align: right;
+        margin-top: 2px;
+      }
+      .rcpt-div {
+        border-top: 1px dashed #cfc8ba;
+        margin: 8px 0;
+      }
+      .rcpt-rows {
+        padding: 2px 0;
+      }
+      .rcpt-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 0;
+      }
+      .rcpt-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex: 0 0 auto;
+      }
+      .rcpt-row-label {
+        flex: 1;
+        font-size: 13px;
+        color: var(--ink);
+      }
+      .rcpt-row-amt {
+        font-family: var(--mono, ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink);
+      }
+      .rcpt-row.zero .rcpt-row-label,
+      .rcpt-row.zero .rcpt-row-amt {
+        color: #b3ad9f;
+      }
+      .rcpt-total-rule {
+        border-top: 2px solid var(--ink);
+        margin: 4px 0 0;
+      }
+      .rcpt-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 10px 0 4px;
+      }
+      .rcpt-total-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .rcpt-total-amt {
+        font-family: var(--mono, ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace);
+        font-size: 1.1rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink);
+      }
+      .rcpt-total.over .rcpt-total-amt {
+        color: #c0392b;
+      }
+      .rcpt-btn {
+        border: none;
+        background: transparent;
+        color: var(--teal, #2ba0b8);
+        cursor: pointer;
+        padding: 6px;
+        line-height: 0;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        margin-right: 4px;
+      }
+      .rcpt-btn:hover {
+        background: rgba(43, 160, 184, 0.1);
+      }
+      .rcpt-field-btn {
+        border: none;
+        background: transparent;
+        color: var(--teal, #2ba0b8);
+        cursor: pointer;
+        padding: 4px;
+        line-height: 0;
+        border-radius: 6px;
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+      }
+      .rcpt-field-btn:hover {
+        background: rgba(43, 160, 184, 0.1);
+      }
+      .rcpt-field-btn.is-hidden {
+        visibility: hidden;
+      }
       .modal-confirm {
         font-size: 0.85rem;
         color: var(--teal-deep);
@@ -1513,20 +1760,6 @@
       .foot-link:hover {
         color: var(--accent-deep);
       }
-
-      @media (prefers-reduced-motion: reduce) {
-        * {
-          animation: none !important;
-          scroll-behavior: auto !important;
-        }
-        /* opacity crossfades are motion-safe, so they survive; only kill
-           transform/position movement for reduced-motion users */
-        *,
-        *::before,
-        *::after {
-          transition-property: opacity, color, background-color, border-color, box-shadow, fill, stroke !important;
-        }
-      }
     </style>
   </head>
   <body>
@@ -1543,6 +1776,23 @@
           </span>
         </a>
         <span class="sync" id="syncState"><span class="sync-dot"></span><span id="syncText">Waiting</span></span>
+        <button class="rcpt-btn" id="receiptBtn" type="button" aria-label="Show cost totals" title="Show cost totals">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <polygon
+              points="4 22.5 6.66 20.5 9.33 22.5 11.99 20.5 14.66 22.5 17.33 20.5 20 22.5 21 21.5 21 1.5 3 1.5 3 21.5 4 22.5" />
+            <path d="M10 13.5h2.5A1.5 1.5 0 0014 12a1.5 1.5 0 00-1.5-1.5h-1A1.5 1.5 0 0110 9a1.5 1.5 0 011.5-1.5H14" />
+            <line x1="12" y1="5.5" x2="12" y2="7.5" />
+            <line x1="12" y1="13.5" x2="12" y2="15.5" />
+          </svg>
+        </button>
         <button class="save-btn" id="createBtn" type="button">Save My Guide</button>
       </div>
     </header>
@@ -2648,6 +2898,29 @@
       </div>
     </div>
 
+    <!-- ===== Cost totals — right slide-in receipt drawer ===== -->
+    <div class="drawer-back" id="receiptDrawer" role="dialog" aria-modal="true" aria-labelledby="receiptTitle">
+      <aside class="drawer" id="receiptPanel">
+        <div class="drawer-head">
+          <h2 id="receiptTitle">Cost totals</h2>
+          <button class="drawer-close" id="receiptClose" type="button" aria-label="Close cost totals">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="drawer-body" id="receiptBody"><!-- renderReceipt() fills this --></div>
+      </aside>
+    </div>
+
     <script>
       (function () {
         "use strict";
@@ -3097,10 +3370,13 @@
               inp.checked = true;
               lab.classList.add("checked");
             }
+            var rcpt = receiptFieldIcon();
+            rcpt.classList.toggle("is-hidden", !rec.checked);
             inp.addEventListener("change", function () {
               setMoneyChecked(f.id, o.id, inp.checked);
               lab.classList.toggle("checked", inp.checked);
               mi.disabled = !inp.checked;
+              rcpt.classList.toggle("is-hidden", !inp.checked);
               if (!inp.checked) {
                 mi.value = "";
                 setMoneyAmt(f.id, o.id, null);
@@ -3132,6 +3408,7 @@
               e.preventDefault();
             });
             mw.appendChild(mi);
+            mw.appendChild(rcpt);
             lab.appendChild(mw);
             box.appendChild(lab);
           });
@@ -3224,6 +3501,23 @@
         // immediately follows a group renders INSIDE that group's card, below any
         // jazNoteAfter. Data key stays the amount field's own id, so stored values and
         // the editor are untouched. amt = the trailing money field object.
+        // Small in-field trigger that opens the cost-totals receipt.
+        function receiptFieldIcon() {
+          var b = el("button", "rcpt-field-btn");
+          b.type = "button";
+          b.setAttribute("aria-label", "Show cost totals");
+          b.title = "Show cost totals";
+          b.innerHTML =
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polygon points="4 22.5 6.66 20.5 9.33 22.5 11.99 20.5 14.66 22.5 17.33 20.5 20 22.5 21 21.5 21 1.5 3 1.5 3 21.5 4 22.5"/>' +
+            '<path d="M10 13.5h2.5A1.5 1.5 0 0014 12a1.5 1.5 0 00-1.5-1.5h-1A1.5 1.5 0 0110 9a1.5 1.5 0 011.5-1.5H14"/>' +
+            '<line x1="12" y1="5.5" x2="12" y2="7.5"/><line x1="12" y1="13.5" x2="12" y2="15.5"/></svg>';
+          b.addEventListener("click", function (e) {
+            e.preventDefault();
+            openReceipt();
+          });
+          return b;
+        }
         function buildAmountRow(amt) {
           var wrap = el("div", "amount-block");
           wrap.appendChild(el("div", "amount-label", amt.label || "Amount"));
@@ -3244,6 +3538,7 @@
             t.value = formatMoney(g(amt.id));
           });
           row.appendChild(t);
+          row.appendChild(receiptFieldIcon());
           wrap.appendChild(row);
           return wrap;
         }
@@ -3910,6 +4205,7 @@
             height: parseInt(d.height, 10) || window.innerHeight,
           };
           if (modal.classList.contains("open")) positionModal();
+          if (document.getElementById("receiptDrawer").classList.contains("open")) positionDrawer();
         });
         function closeCreate() {
           modal.classList.remove("open");
@@ -4075,6 +4371,174 @@
           var local = email ? String(email).split("@")[0] : "";
           eln.textContent = local ? local + "'s" : "";
         }
+        // ── COST RECEIPT ─────────────────────────────────────────────
+        // Line items: edit labels/colors here. src "group" reads
+        // state.data.s2_scope_cabinets[opt].amount; "field" reads state.data[id].
+        // Max/Comfort ceilings are the two standalone budget money fields.
+        var RECEIPT_ITEMS = [
+          { label: "New Cabinets", color: "#2BA0B8", src: "group", group: "s2_scope_cabinets", opt: "new_cabinets" },
+          {
+            label: "Refaced Cabinets",
+            color: "#4C8FA6",
+            src: "group",
+            group: "s2_scope_cabinets",
+            opt: "refacing_cabinets",
+          },
+          {
+            label: "Painted Cabinets",
+            color: "#9DAE9A",
+            src: "group",
+            group: "s2_scope_cabinets",
+            opt: "painting_cabinets",
+          },
+          {
+            label: "Pantry/Storage",
+            color: "#6B9E78",
+            src: "group",
+            group: "s2_scope_cabinets",
+            opt: "new_pantry_storage",
+          },
+          { label: "Appliances", color: "#C8703D", src: "field", id: "s2_scope_appliances_amount" },
+          { label: "Counters", color: "#B58A5A", src: "field", id: "s2_counters_amount" },
+          { label: "Backsplash", color: "#7C6F8F", src: "field", id: "s2_backsplash_amount" },
+          { label: "Walls", color: "#C2A24B", src: "field", id: "s2_walls_amount" },
+          { label: "Light/Electric", color: "#5E9B9B", src: "field", id: "s2_lighting_electrical_amount" },
+          { label: "Flooring", color: "#B56C7A", src: "field", id: "s2_flooring_amount" },
+        ];
+        var RECEIPT_CEILINGS = { comfort: "s2_budget_comfortable", max: "s2_budget_high_end" };
+        function receiptNum(v) {
+          var n = typeof v === "number" ? v : parseFloat(v);
+          return isFinite(n) && n > 0 ? n : 0;
+        }
+        function computeReceipt() {
+          var data = state.data || {};
+          var rows = RECEIPT_ITEMS.map(function (it) {
+            var amt = 0;
+            if (it.src === "group") {
+              var grp = data[it.group];
+              var rec = grp && grp[it.opt];
+              amt = rec ? receiptNum(rec.amount) : 0;
+            } else {
+              amt = receiptNum(data[it.id]);
+            }
+            return { label: it.label, color: it.color, amount: amt };
+          });
+          var total = rows.reduce(function (s, r) {
+            return s + r.amount;
+          }, 0);
+          var comfort = receiptNum(data[RECEIPT_CEILINGS.comfort]);
+          var max = receiptNum(data[RECEIPT_CEILINGS.max]);
+          return {
+            rows: rows,
+            total: total,
+            comfort: comfort,
+            max: max,
+            comfortDelta: comfort - total,
+            maxDelta: max - total,
+            overMax: max > 0 && total > max,
+            barScale: Math.max(total, max, 1),
+          };
+        }
+        function rcptMoney(n) {
+          return "$" + (n > 0 ? formatMoney(n) : "0");
+        }
+        function renderReceipt() {
+          var r = computeReceipt();
+          var body = document.getElementById("receiptBody");
+          body.innerHTML = "";
+
+          // ceiling cards with centered under/over deltas
+          var ceil = el("div", "rcpt-ceilings");
+          [
+            ["Comfort", r.comfort, r.comfortDelta],
+            ["Max budget", r.max, r.maxDelta],
+          ].forEach(function (c) {
+            var col = el("div", "rcpt-ceil-col");
+            var card = el("div", "rcpt-ceil-card");
+            card.appendChild(el("div", "rcpt-ceil-label", c[0]));
+            card.appendChild(el("div", "rcpt-ceil-val", rcptMoney(c[1])));
+            col.appendChild(card);
+            var over = c[2] < 0;
+            col.appendChild(
+              el(
+                "div",
+                "rcpt-ceil-delta" + (over ? " over" : ""),
+                rcptMoney(Math.abs(c[2])) + (over ? " over" : " under"),
+              ),
+            );
+            ceil.appendChild(col);
+          });
+          body.appendChild(ceil);
+
+          // color-keyed stacked bar
+          var barWrap = el("div", "rcpt-barwrap");
+          var bar = el("div", "rcpt-bar");
+          r.rows.forEach(function (row) {
+            if (row.amount <= 0) return;
+            var seg = el("div", "rcpt-seg");
+            seg.style.width = (row.amount / r.barScale) * 100 + "%";
+            seg.style.background = row.color;
+            bar.appendChild(seg);
+          });
+          if (r.overMax) bar.appendChild(el("div", "rcpt-wash"));
+          barWrap.appendChild(bar);
+          // Comfort / Max overlay ticks
+          var ticks = el("div", "rcpt-ticks");
+          function tick(val, label, cls) {
+            if (val <= 0) return;
+            var pct = Math.min((val / r.barScale) * 100, 100);
+            var tk = el("div", "rcpt-tick " + cls);
+            tk.style.left = pct + "%";
+            var lb = el("div", "rcpt-tick-label " + cls, label);
+            lb.style.left = pct + "%";
+            ticks.appendChild(tk);
+            ticks.appendChild(lb);
+          }
+          tick(r.comfort, "Comfort", "comfort");
+          tick(r.max, "Max", "max");
+          barWrap.appendChild(ticks);
+          body.appendChild(barWrap);
+          if (r.overMax) body.appendChild(el("div", "rcpt-warn", "Over max budget"));
+
+          body.appendChild(el("div", "rcpt-div"));
+
+          // itemized rows ($0 shown, dimmed)
+          var list = el("div", "rcpt-rows");
+          r.rows.forEach(function (row) {
+            var zero = row.amount <= 0;
+            var line = el("div", "rcpt-row" + (zero ? " zero" : ""));
+            var dot = el("span", "rcpt-dot");
+            dot.style.background = row.color;
+            line.appendChild(dot);
+            line.appendChild(el("span", "rcpt-row-label", row.label));
+            line.appendChild(el("span", "rcpt-row-amt", rcptMoney(row.amount)));
+            list.appendChild(line);
+          });
+          body.appendChild(list);
+
+          body.appendChild(el("div", "rcpt-total-rule"));
+          var tot = el("div", "rcpt-total" + (r.overMax ? " over" : ""));
+          tot.appendChild(el("span", "rcpt-total-label", "Itemized total"));
+          tot.appendChild(el("span", "rcpt-total-amt", rcptMoney(r.total)));
+          body.appendChild(tot);
+        }
+        function positionDrawer() {
+          var vpTop = _vp ? _vp.top : 0;
+          var vpH = _vp ? _vp.height : window.innerHeight;
+          var margin = 12;
+          var drawer = document.getElementById("receiptDrawer");
+          drawer.style.setProperty("--drawer-top", Math.round(vpTop + margin) + "px");
+          drawer.style.setProperty("--drawer-maxh", Math.max(160, Math.round(vpH - margin * 2)) + "px");
+        }
+        function openReceipt() {
+          requestViewport(); // async band reply repositions
+          renderReceipt();
+          positionDrawer();
+          document.getElementById("receiptDrawer").classList.add("open");
+        }
+        function closeReceipt() {
+          document.getElementById("receiptDrawer").classList.remove("open");
+        }
         function boot() {
           var app = document.getElementById("app");
           app.innerHTML = "";
@@ -4103,6 +4567,11 @@
             goTo(current - 1);
           });
           document.getElementById("createBtn").addEventListener("click", openCreate);
+          document.getElementById("receiptBtn").addEventListener("click", openReceipt);
+          document.getElementById("receiptClose").addEventListener("click", closeReceipt);
+          document.getElementById("receiptDrawer").addEventListener("click", function (e) {
+            if (e.target === document.getElementById("receiptDrawer")) closeReceipt();
+          });
           // chooser wiring
           document.getElementById("createCancel").addEventListener("click", closeCreate);
           document.getElementById("createConfirm").addEventListener("click", runCreate);
