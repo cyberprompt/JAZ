@@ -508,6 +508,77 @@
         min-height: 1.2em;
         margin-top: 10px;
       }
+      /* ---- result state: swaps in place of the option rows ---- */
+      .modal-options[hidden],
+      .modal-result[hidden] {
+        display: none;
+      }
+      .modal-result {
+        text-align: center;
+        padding: 8px 0 0;
+      }
+      .result-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        margin: 4px auto 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        line-height: 1;
+      }
+      .result-icon.ok {
+        background: rgba(43, 160, 184, 0.12);
+        color: var(--teal-deep);
+      }
+      .result-icon.fail {
+        background: rgba(190, 110, 60, 0.12);
+        color: var(--accent-deep);
+      }
+      .modal-result h3 {
+        font-family: var(--serif);
+        font-size: 1.2rem;
+        margin: 0 0 6px;
+        color: var(--ink);
+      }
+      .modal-result .result-sub {
+        font-size: 0.9rem;
+        color: var(--ink-soft);
+        margin: 0 0 16px;
+      }
+      .result-list {
+        list-style: none;
+        margin: 0 0 18px;
+        padding: 0;
+        text-align: left;
+        display: inline-block;
+      }
+      .result-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        font-size: 0.92rem;
+        color: var(--ink);
+        padding: 5px 0;
+      }
+      .result-list .mark {
+        flex: 0 0 auto;
+        font-weight: 700;
+        line-height: 1.45;
+      }
+      .result-list li.ok .mark {
+        color: var(--teal-deep);
+      }
+      .result-list li.fail .mark {
+        color: var(--accent-deep);
+      }
+      .result-list li.fail .why {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        font-style: italic;
+      }
       .modal-confirm .err {
         color: var(--accent-deep);
       }
@@ -1185,6 +1256,8 @@
         opacity: 0;
         z-index: 0;
         pointer-events: none;
+        user-select: none;
+        -webkit-user-select: none;
         transform-origin: center center;
         will-change: transform, opacity;
       }
@@ -2872,81 +2945,96 @@
     <div class="modal-back" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createTitle">
       <div class="modal">
         <h2 id="createTitle" data-copy="title">Save My Guide</h2>
-        <p class="modal-sub" data-copy="sub"
+        <p class="modal-sub" id="createSub" data-copy="sub"
           >Your answers are already saved. Pick what to do with them — choose any combination.</p
         >
 
-        <label class="opt-row" id="optDownload">
-          <input type="checkbox" id="cbDownload" checked />
-          <span class="opt-text">
-            <span class="opt-title" data-copy="optDownloadTitle">Download a copy</span>
-            <span class="opt-desc" data-copy="optDownloadDesc"
-              >Saves a self-contained file to this device you can open, finish, and share anytime.</span
-            >
-          </span>
-        </label>
+        <div class="modal-options" id="createOptions">
+          <label class="opt-row" id="optDownload">
+            <input type="checkbox" id="cbDownload" checked />
+            <span class="opt-text">
+              <span class="opt-title" data-copy="optDownloadTitle">Download a copy</span>
+              <span class="opt-desc" data-copy="optDownloadDesc"
+                >Saves a self-contained file to this device you can open, finish, and share anytime.</span
+              >
+            </span>
+          </label>
 
-        <label class="opt-row" id="optEmailMe">
-          <input type="checkbox" id="cbEmailMe" />
-          <span class="opt-text">
-            <span class="opt-title" data-copy="optEmailTitle">Email it to me</span>
-            <span class="opt-desc" data-copy="optEmailDesc">Sends the guide to your email so you have it on hand.</span>
-            <span class="opt-note" id="emailMeNote" data-copy="needsInternet" hidden
-              >Needs internet — available once you're online.</span
-            >
-          </span>
-        </label>
+          <label class="opt-row" id="optEmailMe">
+            <input type="checkbox" id="cbEmailMe" />
+            <span class="opt-text">
+              <span class="opt-title" data-copy="optEmailTitle">Email it to me</span>
+              <span class="opt-desc" data-copy="optEmailDesc"
+                >Sends the guide to your email so you have it on hand.</span
+              >
+              <span class="opt-note" id="emailMeNote" data-copy="needsInternet" hidden
+                >Needs internet — available once you're online.</span
+              >
+            </span>
+          </label>
 
-        <!-- revealed only when Email Guide is ticked -->
-        <div class="email-sub" id="emailSub">
-          <div class="email-me-row">
-            <input type="checkbox" id="cbEmailToMe" checked />
-            <span class="to-me" data-copy-str="emailToMeLabel">Email to me</span>
-            <span class="to-me addr" id="emailToMeAddr"></span>
+          <!-- revealed only when Email Guide is ticked -->
+          <div class="email-sub" id="emailSub">
+            <div class="email-me-row">
+              <input type="checkbox" id="cbEmailToMe" checked />
+              <span class="to-me" data-copy-str="emailToMeLabel">Email to me</span>
+              <span class="to-me addr" id="emailToMeAddr"></span>
+            </div>
+            <label data-copy-str="emailCopyToLabel" for="emailCopyTo">Send copy to:</label>
+            <input type="email" id="emailCopyTo" autocomplete="email" placeholder="name@example.com" />
+            <div class="field-err" id="emailErr" aria-live="polite"></div>
           </div>
-          <label data-copy-str="emailCopyToLabel" for="emailCopyTo">Send copy to:</label>
-          <input type="email" id="emailCopyTo" autocomplete="email" placeholder="name@example.com" />
-          <div class="field-err" id="emailErr" aria-live="polite"></div>
+
+          <label class="opt-row" id="optSendJaz">
+            <input type="checkbox" id="cbSendJaz" />
+            <span class="opt-text">
+              <span class="opt-title" data-copy="optJazTitle">Send to JAZ Design</span>
+              <span class="opt-desc" data-copy="optJazDesc"
+                >Shares your answers with JAZ Design to start the conversation.</span
+              >
+              <span class="opt-note" id="sendJazNote" data-copy="needsInternet" hidden
+                >Needs internet — available once you're online.</span
+              >
+            </span>
+          </label>
+
+          <!-- revealed only when Send to JAZ Design is ticked -->
+          <div class="contact-sub" id="contactSub">
+            <label data-copy-str="contactEmailLabel">Your email (shared with JAZ Design)</label>
+            <input type="email" id="c_email_ro" class="ro" readonly />
+            <label data-copy-str="contactNameLabel">Name</label>
+            <input type="text" id="contact_name" autocomplete="name" />
+            <div class="contact-row">
+              <div
+                ><label data-copy-str="contactPhoneLabel">Phone</label
+                ><input type="tel" id="contact_phone" autocomplete="tel"
+              /></div>
+            </div>
+            <div class="contact-row">
+              <div><label data-copy-str="contactCityLabel">City</label><input type="text" id="contact_city" /></div>
+              <div><label data-copy-str="contactStateLabel">State</label><input type="text" id="contact_state" /></div>
+            </div>
+            <label data-copy-str="contactCommentsLabel">Anything you'd like JAZ Design to know? (optional)</label>
+            <textarea id="jaz_comments" rows="3"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button class="nav-btn ghost" id="createCancel" type="button" data-copy="cancel">Cancel</button>
+            <button class="nav-btn primary" id="createConfirm" type="button" data-copy="done">Continue</button>
+          </div>
+          <div class="modal-confirm" id="createConfirmMsg" aria-live="polite"></div>
         </div>
 
-        <label class="opt-row" id="optSendJaz">
-          <input type="checkbox" id="cbSendJaz" />
-          <span class="opt-text">
-            <span class="opt-title" data-copy="optJazTitle">Send to JAZ Design</span>
-            <span class="opt-desc" data-copy="optJazDesc"
-              >Shares your answers with JAZ Design to start the conversation.</span
-            >
-            <span class="opt-note" id="sendJazNote" data-copy="needsInternet" hidden
-              >Needs internet — available once you're online.</span
-            >
-          </span>
-        </label>
-
-        <!-- revealed only when Send to JAZ Design is ticked -->
-        <div class="contact-sub" id="contactSub">
-          <label data-copy-str="contactEmailLabel">Your email (shared with JAZ Design)</label>
-          <input type="email" id="c_email_ro" class="ro" readonly />
-          <label data-copy-str="contactNameLabel">Name</label>
-          <input type="text" id="contact_name" autocomplete="name" />
-          <div class="contact-row">
-            <div
-              ><label data-copy-str="contactPhoneLabel">Phone</label
-              ><input type="tel" id="contact_phone" autocomplete="tel"
-            /></div>
+        <div class="modal-result" id="createResult" hidden aria-live="polite">
+          <div class="result-icon" id="resultIcon" aria-hidden="true"></div>
+          <h3 id="resultTitle"></h3>
+          <p class="result-sub" id="resultSub"></p>
+          <ul class="result-list" id="resultList"></ul>
+          <div class="modal-actions modal-actions--row">
+            <button class="nav-btn ghost" id="resultBack" type="button"></button>
+            <button class="nav-btn primary" id="resultOk" type="button">OK</button>
           </div>
-          <div class="contact-row">
-            <div><label data-copy-str="contactCityLabel">City</label><input type="text" id="contact_city" /></div>
-            <div><label data-copy-str="contactStateLabel">State</label><input type="text" id="contact_state" /></div>
-          </div>
-          <label data-copy-str="contactCommentsLabel">Anything you'd like JAZ Design to know? (optional)</label>
-          <textarea id="jaz_comments" rows="3"></textarea>
         </div>
-
-        <div class="modal-actions">
-          <button class="nav-btn ghost" id="createCancel" type="button" data-copy="cancel">Cancel</button>
-          <button class="nav-btn primary" id="createConfirm" type="button" data-copy="done">Continue</button>
-        </div>
-        <div class="modal-confirm" id="createConfirmMsg" aria-live="polite"></div>
       </div>
     </div>
 
@@ -4351,6 +4439,9 @@
           document.getElementById("emailCopyTo").value = "";
           document.getElementById("emailErr").textContent = "";
           document.getElementById("createConfirmMsg").textContent = "";
+          document.getElementById("createResult").hidden = true;
+          document.getElementById("createOptions").hidden = false;
+          document.getElementById("createSub").hidden = false;
           syncOptAvailability();
           syncContactSub();
           syncEmailSub();
@@ -4482,6 +4573,49 @@
           return { ok: true, recipients: list };
         }
 
+        // ---- result view: swaps in place of the options, respects positionModal() ----
+        function showResult(rows) {
+          var anyFail = rows.some(function (r) {
+            return !r.ok;
+          });
+          var anyOk = rows.some(function (r) {
+            return r.ok;
+          });
+          var icon = document.getElementById("resultIcon");
+          var list = document.getElementById("resultList");
+          icon.className = "result-icon " + (anyFail && !anyOk ? "fail" : "ok");
+          icon.textContent = anyFail && !anyOk ? "!" : "\u2713";
+          document.getElementById("resultTitle").textContent = anyFail
+            ? anyOk
+              ? "Partly done"
+              : "That didn\u2019t go through"
+            : "All done";
+          document.getElementById("resultSub").textContent = anyFail
+            ? "Your answers are still saved on this device."
+            : "Your answers are safe.";
+          while (list.firstChild) list.removeChild(list.firstChild);
+          rows.forEach(function (r) {
+            var li = el("li", r.ok ? "ok" : "fail");
+            li.appendChild(el("span", "mark", r.ok ? "\u2713" : "\u2715"));
+            var txt = el("span", null, r.label);
+            if (!r.ok && r.why) txt.appendChild(el("span", "why", r.why));
+            li.appendChild(txt);
+            list.appendChild(li);
+          });
+          document.getElementById("resultBack").textContent = anyFail ? "\u2039 Retry" : "\u2039 Back";
+          document.getElementById("createOptions").hidden = true;
+          document.getElementById("createSub").hidden = true;
+          document.getElementById("createResult").hidden = false;
+          requestAnimationFrame(positionModal);
+        }
+        function showOptions() {
+          document.getElementById("createResult").hidden = true;
+          document.getElementById("createOptions").hidden = false;
+          document.getElementById("createSub").hidden = false;
+          document.getElementById("createConfirmMsg").textContent = "";
+          requestAnimationFrame(positionModal);
+        }
+
         function runCreate() {
           var wantDownload = document.getElementById("cbDownload").checked;
           var wantEmailMe = document.getElementById("cbEmailMe").checked;
@@ -4505,12 +4639,15 @@
 
           if (wantSendJaz) captureContact();
 
+          var rows = [];
           if (wantDownload) {
             downloadFilledHTML();
-            done.push("Downloaded");
+            rows.push({ ok: true, label: "Downloaded a copy to this device" });
           }
 
           if (wantEmailMe || wantSendJaz) {
+            var nRecip = recips ? recips.length : 0;
+            var emailLabel = "Emailed your guide" + (nRecip > 1 ? " to " + nRecip + " recipients" : "");
             sendViaServer({
               sendToUser: wantEmailMe,
               recipients: recips,
@@ -4518,21 +4655,25 @@
               contact: wantSendJaz ? pick(state.data, CONTACT_KEYS) : null,
             })
               .then(function () {
-                if (wantEmailMe) done.push("Emailed");
-                if (wantSendJaz) done.push("Sent to JAZ Design");
-                msg.textContent = done.join(" · ") + ".";
+                if (wantEmailMe) rows.push({ ok: true, label: emailLabel });
+                if (wantSendJaz) rows.push({ ok: true, label: "Sent to JAZ Design" });
                 markSynced();
+                showResult(rows);
               })
               .catch(function () {
-                if (done.length) msg.textContent = done.join(" · ") + ". ";
-                else msg.textContent = "";
-                var span = el("span", "err", "Emailing isn’t available yet — your download is ready.");
-                msg.appendChild(span);
+                var why = isOnline() ? "Couldn\u2019t reach the server." : "You\u2019re offline right now.";
+                if (wantEmailMe) rows.push({ ok: false, label: emailLabel, why: why });
+                if (wantSendJaz) rows.push({ ok: false, label: "Sent to JAZ Design", why: why });
+                showResult(rows);
               });
-            return; // async path writes its own confirmation
+            return; // async path renders its own result
           }
 
-          msg.textContent = done.length ? done.join(" · ") + "." : "Nothing selected — your answers are already saved.";
+          if (!rows.length) {
+            msg.textContent = "Nothing selected — your answers are already saved.";
+            return;
+          }
+          showResult(rows);
         }
         function pick(obj, keys) {
           var o = {};
@@ -4782,6 +4923,8 @@
           // chooser wiring
           document.getElementById("createCancel").addEventListener("click", closeCreate);
           document.getElementById("createConfirm").addEventListener("click", runCreate);
+          document.getElementById("resultOk").addEventListener("click", closeCreate);
+          document.getElementById("resultBack").addEventListener("click", showOptions);
           document.getElementById("cbSendJaz").addEventListener("change", syncContactSub);
           document.getElementById("cbEmailMe").addEventListener("change", syncEmailSub);
           document.getElementById("emailCopyTo").addEventListener("input", function () {
