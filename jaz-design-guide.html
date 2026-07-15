@@ -798,6 +798,7 @@
         color: var(--ink);
         font-size: 13px;
         font-weight: 600;
+        text-shadow: 0 0 1px var(--paper);
         letter-spacing: 0.02em;
         padding: 6px 4px;
         display: flex;
@@ -809,6 +810,7 @@
 
       .stop button:hover {
         color: var(--paper);
+        text-shadow: 0 0 1px var(--ink);
       }
 
       .dot {
@@ -1154,11 +1156,24 @@
       }
       .cover .sub {
         font-family: var(--serif);
-        font-size: 1.3rem;
-        font-style: normal;
-        color: var(--jaz-blue);
+        font-size: 1.6rem;
+        font-style: italic;
+        color: var(--focus);
         max-width: 48ch;
         margin: 22px auto 0;
+      }
+      .cover .sub .lw {
+        display: inline-block;
+        white-space: nowrap;
+      }
+      .cover .sub .lo {
+        display: inline-block;
+      }
+      .cover .sub .li {
+        display: inline-block;
+        opacity: 0;
+        transform-origin: center center;
+        will-change: transform, opacity;
       }
 
       /* ---- page 2: introduction ---- */
@@ -1241,12 +1256,13 @@
 
       /* ---- email gate ---- */
       .gate {
-        background: #c8703d33;
-        border: 1px solid var(--accent);
+        background: #cddbca;
+        border: 1px solid var(--green-deep);
         border-radius: var(--radius);
         padding: 26px;
         margin: 30px 0;
         text-align: center;
+        text-shadow: 0 0 1px var(--card);
       }
       .gate h2 {
         font-family: var(--serif);
@@ -3623,6 +3639,69 @@
         };
 
         // ---- panel builders ----
+        function armSubLetters(sub) {
+          if (!sub || sub.dataset.lettersArmed === "1") return;
+          sub.dataset.lettersArmed = "1";
+          var TEXT = sub.textContent;
+          if (!TEXT) return;
+          var STAGGER = 50,
+            DUR = 150,
+            PAUSE = 300,
+            SCALE = 2 / 1.6;
+          var items = [];
+          sub.textContent = "";
+          var words = TEXT.split(" ");
+          for (var wi = 0; wi < words.length; wi++) {
+            var wrap = el("span", "lw");
+            var chars = Array.from(words[wi]);
+            for (var ci = 0; ci < chars.length; ci++) {
+              var outer = el("span", "lo");
+              var inner = el("span", "li", chars[ci]);
+              inner.style.transform = "scale(" + SCALE + ")";
+              inner.style.transition = "opacity " + DUR + "ms ease-out, transform " + DUR + "ms ease-out";
+              outer.appendChild(inner);
+              wrap.appendChild(outer);
+              items.push({ node: inner, comma: chars[ci] === "," });
+            }
+            sub.appendChild(wrap);
+            if (wi < words.length - 1) sub.appendChild(document.createTextNode(" "));
+          }
+          function reserve() {
+            sub.style.minHeight = "";
+            var h = sub.offsetHeight;
+            if (h) sub.style.minHeight = h + "px";
+          }
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserve);
+          else reserve();
+          requestAnimationFrame(reserve);
+          function play() {
+            var t = 0;
+            items.forEach(function (it) {
+              setTimeout(function () {
+                it.node.style.opacity = "1";
+                it.node.style.transform = "scale(1)";
+              }, t);
+              t += STAGGER;
+              if (it.comma) t += DUR + PAUSE;
+            });
+          }
+          if (!("IntersectionObserver" in window)) {
+            play();
+            return;
+          }
+          var thr = sub.offsetHeight > window.innerHeight * 0.9 ? 0.5 : 1;
+          var io = new IntersectionObserver(
+            function (es) {
+              if (es[0].isIntersecting) {
+                io.disconnect();
+                play();
+              }
+            },
+            { threshold: thr },
+          );
+          io.observe(sub);
+        }
+
         function buildCover() {
           var p = el("section", "panel");
           var c = el("div", "cover");
@@ -3644,7 +3723,9 @@
           img.src = IMG.cover;
           img.alt = imgAltOf("cover", "Sunlit kitchen with wood cabinetry");
           c.appendChild(img);
-          c.appendChild(el("p", cvClass("subtitle", "sub"), cvText("subtitle", MODEL.meta.subtitle || "")));
+          var subEl = el("p", cvClass("subtitle", "sub"), cvText("subtitle", MODEL.meta.subtitle || ""));
+          c.appendChild(subEl);
+          armSubLetters(subEl);
           p.appendChild(c);
           // gate
           var gate = el("div", "gate");
