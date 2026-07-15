@@ -1168,10 +1168,23 @@
       }
       .cover .sub .lo {
         display: inline-block;
+        position: relative;
       }
       .cover .sub .li {
         display: inline-block;
         opacity: 0;
+        position: relative;
+        z-index: 1;
+        transform-origin: center center;
+        will-change: transform, opacity;
+      }
+      .cover .sub .lg {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        z-index: 0;
+        pointer-events: none;
         transform-origin: center center;
         will-change: transform, opacity;
       }
@@ -3639,15 +3652,29 @@
         };
 
         // ---- panel builders ----
+        // ---- cover tagline letter animation · TUNABLES ----
+        var SUB_ANIM = {
+          stagger: 90, // ms between each letter starting
+          dur: 400, // ms for a letter to settle (opacity + scale)
+          commaPause: 700, // ms extra pause AFTER a comma has landed
+          startSizeRem: 2, // letter starts at this size
+          finalSizeRem: 1.6, // must match the .cover .sub font-size
+          startOpacity: 0.4, // letter's opacity at the instant it appears
+          glowSize: 1.6, // glow size relative to the settled glyph
+          glowBlurPx: 8, // mist softness
+          glowOpacity: 0.5, // glow opacity once the letter has settled
+          glowHold: 300, // ms the glow lingers at full before fading
+          glowFade: 700, // ms for the glow to fade away
+          viewThreshold: 1, // 1 = fully in view; auto-drops to 0.5 for tall blocks
+        };
+
         function armSubLetters(sub) {
           if (!sub || sub.dataset.lettersArmed === "1") return;
           sub.dataset.lettersArmed = "1";
           var TEXT = sub.textContent;
           if (!TEXT) return;
-          var STAGGER = 50,
-            DUR = 150,
-            PAUSE = 300,
-            SCALE = 2 / 1.6;
+          var A = SUB_ANIM;
+          var SCALE = A.startSizeRem / A.finalSizeRem;
           var items = [];
           sub.textContent = "";
           var words = TEXT.split(" ");
@@ -3656,12 +3683,15 @@
             var chars = Array.from(words[wi]);
             for (var ci = 0; ci < chars.length; ci++) {
               var outer = el("span", "lo");
+              var glow = el("span", "lg", chars[ci]);
+              glow.setAttribute("aria-hidden", "true");
+              glow.style.filter = "blur(" + A.glowBlurPx + "px)";
+              glow.style.textShadow = "0 0 " + A.glowBlurPx * 0.8 + "px currentColor";
               var inner = el("span", "li", chars[ci]);
-              inner.style.transform = "scale(" + SCALE + ")";
-              inner.style.transition = "opacity " + DUR + "ms ease-out, transform " + DUR + "ms ease-out";
+              outer.appendChild(glow);
               outer.appendChild(inner);
               wrap.appendChild(outer);
-              items.push({ node: inner, comma: chars[ci] === "," });
+              items.push({ node: inner, glow: glow, comma: chars[ci] === "," });
             }
             sub.appendChild(wrap);
             if (wi < words.length - 1) sub.appendChild(document.createTextNode(" "));
@@ -3674,22 +3704,51 @@
           if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserve);
           else reserve();
           requestAnimationFrame(reserve);
+          function land(it) {
+            it.node.style.transition = "none";
+            it.node.style.opacity = String(A.startOpacity);
+            it.node.style.transform = "scale(" + SCALE + ")";
+            it.glow.style.transition = "none";
+            it.glow.style.opacity = String(A.startOpacity * A.glowOpacity);
+            it.glow.style.transform = "scale(" + SCALE * A.glowSize + ")";
+            void it.node.offsetWidth;
+            var tr = "opacity " + A.dur + "ms ease-out, transform " + A.dur + "ms ease-out";
+            it.node.style.transition = tr;
+            it.glow.style.transition = tr;
+            it.node.style.opacity = "1";
+            it.node.style.transform = "scale(1)";
+            it.glow.style.opacity = String(A.glowOpacity);
+            it.glow.style.transform = "scale(" + A.glowSize + ")";
+          }
           function play() {
             var t = 0;
             items.forEach(function (it) {
+              var at = t;
               setTimeout(function () {
-                it.node.style.opacity = "1";
-                it.node.style.transform = "scale(1)";
-              }, t);
-              t += STAGGER;
-              if (it.comma) t += DUR + PAUSE;
+                land(it);
+              }, at);
+              setTimeout(
+                function () {
+                  it.glow.style.transition = "opacity " + A.glowFade + "ms ease-in";
+                  it.glow.style.opacity = "0";
+                },
+                at + A.dur + A.glowHold,
+              );
+              setTimeout(
+                function () {
+                  if (it.glow.parentNode) it.glow.parentNode.removeChild(it.glow);
+                },
+                at + A.dur + A.glowHold + A.glowFade + 60,
+              );
+              t += A.stagger;
+              if (it.comma) t += A.dur + A.commaPause;
             });
           }
           if (!("IntersectionObserver" in window)) {
             play();
             return;
           }
-          var thr = sub.offsetHeight > window.innerHeight * 0.9 ? 0.5 : 1;
+          var thr = sub.offsetHeight > window.innerHeight * 0.9 ? 0.5 : A.viewThreshold;
           var io = new IntersectionObserver(
             function (es) {
               if (es[0].isIntersecting) {
