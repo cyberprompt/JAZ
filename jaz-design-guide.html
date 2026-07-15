@@ -111,7 +111,10 @@
         overflow: auto;
         box-shadow: 0 20px 60px rgba(44, 49, 56, 0.28);
         transform: translateY(8px);
-        transition: transform 0.2s;
+        transition:
+          transform 0.2s,
+          margin-top 0.25s ease,
+          max-height 0.25s ease;
         padding: 24px 22px;
       }
       .modal-back.open .modal {
@@ -178,14 +181,29 @@
         font-style: italic;
       }
       /* contact sub-form, revealed when Send to JAZ is ticked */
+      /* animated reveal: max-height is set in px by setSubOpen(), then released to
+     none so the form can grow (validation errors, copy swaps) without clipping. */
       .contact-sub {
         border-left: 3px solid var(--teal);
         padding: 4px 0 4px 14px;
         margin: 2px 0 14px 30px;
-        display: none;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition:
+          max-height 0.25s ease,
+          opacity 0.2s ease,
+          padding 0.25s ease,
+          margin 0.25s ease;
+      }
+      .contact-sub:not(.show) {
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
       }
       .contact-sub.show {
-        display: block;
+        opacity: 1;
       }
       .contact-sub label {
         display: block;
@@ -505,10 +523,23 @@
         border-left: 3px solid var(--teal);
         padding: 4px 0 4px 14px;
         margin: 2px 0 14px 30px;
-        display: none;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition:
+          max-height 0.25s ease,
+          opacity 0.2s ease,
+          padding 0.25s ease,
+          margin 0.25s ease;
+      }
+      .email-sub:not(.show) {
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
       }
       .email-sub.show {
-        display: block;
+        opacity: 1;
       }
       .email-sub label {
         display: block;
@@ -736,10 +767,18 @@
         padding: 0 20px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 0;
         overflow-x: auto;
         scrollbar-width: none;
+      }
+      /* centered when the rail fits; scrolls fully to "Welcome" when it overflows.
+     justify-content:center would strand the leading overflow past scrollLeft:0. */
+      .progress-inner > .stop:first-child {
+        margin-left: auto;
+      }
+      .progress-inner > .stop:last-child {
+        margin-right: auto;
       }
       .progress-inner::-webkit-scrollbar {
         display: none;
@@ -4187,6 +4226,28 @@
         // Embedded: parent posts {type:"jazguide:viewport",top,height}, cached as _vp.
         // Standalone/offline (no parent / before reply): fall back to this window's viewport.
         var _vp = null;
+
+        // Animate a sub-form open/closed by px max-height, then release to `none` on open
+        // so later growth isn't clipped. Recenters the modal as the height changes.
+        function setSubOpen(el, on) {
+          if (!el) return;
+          if (el._subT) clearTimeout(el._subT);
+          if (on) {
+            el.classList.add("show");
+            el.style.maxHeight = el.scrollHeight + "px";
+            el._subT = setTimeout(function () {
+              el.style.maxHeight = "none";
+              positionModal();
+            }, 260);
+          } else {
+            el.style.maxHeight = el.scrollHeight + "px";
+            el.offsetHeight; // reflow so the collapse animates from the current height
+            el.classList.remove("show");
+            el.style.maxHeight = "0px";
+            el._subT = setTimeout(positionModal, 260);
+          }
+          requestAnimationFrame(positionModal);
+        }
         function positionModal() {
           var vpTop = _vp ? _vp.top : 0;
           var vpH = _vp ? _vp.height : window.innerHeight;
@@ -4236,7 +4297,7 @@
         }
         function syncContactSub() {
           var on = document.getElementById("cbSendJaz").checked;
-          document.getElementById("contactSub").classList.toggle("show", on);
+          setSubOpen(document.getElementById("contactSub"), on);
           document.getElementById("c_email_ro").value = state.email || "";
           // hydrate contact fields from state.data (namespaced, persisted like other fields)
           CONTACT_KEYS.forEach(function (k) {
@@ -4248,7 +4309,7 @@
         // account email beside the "Email to me" checkbox for confirmation.
         function syncEmailSub() {
           var on = document.getElementById("cbEmailMe").checked;
-          document.getElementById("emailSub").classList.toggle("show", on);
+          setSubOpen(document.getElementById("emailSub"), on);
           document.getElementById("emailToMeAddr").textContent = state.email ? "(" + state.email + ")" : "";
           if (!on) document.getElementById("emailErr").textContent = "";
         }
