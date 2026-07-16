@@ -4461,6 +4461,7 @@
             body: JSON.stringify({
               email: state.email,
               data: state.data,
+              consent: state.consent || null,
               created_at: state.created_at,
               updated_at: state.updated_at,
             }),
@@ -4471,7 +4472,8 @@
         }
         // Load a record by email. Resolves to the record object or null; rejects on network error.
         function loadFromServer(email) {
-          var url = SB_REST + "?email=eq." + encodeURIComponent(email) + "&select=email,data,created_at,updated_at";
+          var url =
+            SB_REST + "?email=eq." + encodeURIComponent(email) + "&select=email,data,consent,created_at,updated_at";
           return fetch(url, { headers: sbHeaders() })
             .then(function (r) {
               if (!r.ok) throw new Error("load " + r.status);
