@@ -2086,7 +2086,7 @@
               "class": ""
             },
             "consentPrior": {
-              "text": "Agreement to {{terms}} and {{privacy}} previously accepted.",
+              "text": "Agreement to {{terms}} and {{privacy}} previously accepted for this email address.",
               "class": ""
             }
           },
@@ -4085,7 +4085,10 @@
             cbox.disabled = prior;
             wrap.appendChild(cbox);
             var raw = prior
-              ? cvText("consentPrior", "Agreement to {{terms}} and {{privacy}} previously accepted.")
+              ? cvText(
+                  "consentPrior",
+                  "Agreement to {{terms}} and {{privacy}} previously accepted for this email address.",
+                )
               : cvText(
                   "consentText",
                   "I agree to {{terms}} and {{privacy}} of JAZ Design, Inc. for using this guide and providing my information.",
