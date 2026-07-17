@@ -244,6 +244,7 @@
       }
       /* Resume + Continuing modals: centered text, buttons in one centered row */
       #resumeModal .modal,
+      #changeModal .modal,
       #continuingModal .modal {
         text-align: center;
       }
@@ -1429,14 +1430,15 @@
         cursor: default;
       }
       .gate .consent a {
-        color: inherit;
+        color: var(--green-deep);
         font-weight: 700;
-        text-decoration: none;
+        text-decoration: underline;
         transition: color 0.15s ease;
+        text-shadow: 1px 1px 2px var(--card);
       }
       .gate .consent a:hover,
       .gate .consent a:focus-visible {
-        color: var(--teal-deep);
+        color: var(--accent-deep);
       }
       .gate .consent.is-prior {
         opacity: 0.75;
@@ -2031,7 +2033,7 @@
             "text": "jazdesign.com/guide",
             "url": "https://www.jazdesign.com/guide"
           },
-          "schemaVersion": 15,
+          "schemaVersion": 16,
           "sourcePdf": "guide_optimizedFINAL.pdf",
           "notes": "Field schema extracted from the 12-page PDF. Drives the HTML template, autosave keys, and the Supabase JSON payload. Every input field has a stable `id` used as the storage key; ids are never renamed once shipped (renaming breaks saved records).",
           "fieldTypes": {
@@ -2094,7 +2096,11 @@
             "privacyLabel": "Privacy Policy",
             "termsUrl": "https://www.jazdesign.com/terms",
             "privacyUrl": "https://www.jazdesign.com/privacy",
-            "consentError": "Please accept the Terms of Use and Privacy Policy to continue."
+            "consentError": "Please accept the Terms of Use and Privacy Policy to continue.",
+            "changeTitle": "Change your email address?",
+            "changeBody": "Changing email from {{from}} to {{to}} will reset the guide and clear any previous answers. Continue?",
+            "changeOk": "Change email",
+            "changeCancel": "Cancel"
           }
         },
         "chooser": {
@@ -3132,6 +3138,17 @@
       </div>
     </div>
 
+    <div class="modal-back" id="changeModal" role="dialog" aria-modal="true" aria-labelledby="changeTitle">
+      <div class="modal">
+        <h2 id="changeTitle">Change your email address?</h2>
+        <p class="modal-sub" id="changeBody"></p>
+        <div class="modal-actions modal-actions--row">
+          <button class="nav-btn primary" id="changeOk" type="button">Change email</button>
+          <button class="nav-btn ghost" id="changeCancel" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-back" id="continuingModal" role="dialog" aria-modal="true" aria-labelledby="continuingTitle">
       <div class="modal">
         <h2 id="continuingTitle">Continuing…</h2>
@@ -3189,7 +3206,59 @@
         };
 
         // ---- state ----
-        var LSKEY = "jazguide:data";
+        // ---- state ----
+        // Per-email slots, N=1. The email is the KEY, not a field inside the record, so answers
+        // can never ride along to a different address. An email change DELETES the old slot.
+        var LSPREFIX = "jazguide:data:"; // + lowercased email
+        var LSACTIVE = "jazguide:active"; // bootstrap: which email owns the live slot
+        var LSCLIENT = "jazguide:client"; // opaque browser token — OUTSIDE the slot, never wiped
+        var LSSEED = "jazguide:seedspent"; // a wiped download must not re-seed itself
+        function slotKey(email) {
+          return (
+            LSPREFIX +
+            String(email || "")
+              .trim()
+              .toLowerCase()
+          );
+        }
+        // Minted once per browser. "Same browser", NOT "same person" — an admin hint, never evidence.
+        function clientId() {
+          var id = null;
+          try {
+            id = localStorage.getItem(LSCLIENT);
+          } catch (e) {}
+          if (!id) {
+            id =
+              window.crypto && window.crypto.randomUUID
+                ? window.crypto.randomUUID()
+                : "c-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+            try {
+              localStorage.setItem(LSCLIENT, id);
+            } catch (e) {}
+          }
+          return id;
+        }
+        function seedSpent() {
+          try {
+            return localStorage.getItem(LSSEED) === "1";
+          } catch (e) {
+            return false;
+          }
+        }
+        // Wipe ONE slot. Never touches LSCLIENT.
+        function wipeSlot(email) {
+          var e2 = String(email || "").toLowerCase();
+          try {
+            localStorage.removeItem(slotKey(email));
+            if ((localStorage.getItem(LSACTIVE) || "").toLowerCase() === e2) localStorage.removeItem(LSACTIVE);
+          } catch (e) {}
+          // a baked-in download would otherwise re-seed the wiped data on the very next boot
+          if (SEED && SEED.email && String(SEED.email).toLowerCase() === e2) {
+            try {
+              localStorage.setItem(LSSEED, "1");
+            } catch (e) {}
+          }
+        }
         var state = loadState();
         var panels = MODEL.sections.slice(); // includes info sections
         var navStops = MODEL.sections.slice(); // rail shows: intro + all sections (cover added separately)
@@ -3199,20 +3268,34 @@
 
         function loadState() {
           var base = { email: "", data: {}, consent: null, created_at: null, updated_at: null };
+          // legacy single-key store (pre-slot). Alpha decision: no migration — drop it blind.
           try {
-            var ls = JSON.parse(localStorage.getItem(LSKEY) || "null");
-            if (ls) return Object.assign(base, ls);
+            localStorage.removeItem("jazguide:data");
           } catch (e) {}
-          if (SEED && SEED.email) {
+          var active = null;
+          try {
+            active = localStorage.getItem(LSACTIVE);
+          } catch (e) {}
+          if (active) {
+            try {
+              var ls = JSON.parse(localStorage.getItem(slotKey(active)) || "null");
+              if (ls) return Object.assign(base, ls);
+            } catch (e) {}
+          }
+          // offline baked-in copy. SEED is DATA, not an exemption: once its slot has been wiped
+          // for failing the exist check, it must never refill it.
+          if (SEED && SEED.email && !seedSpent()) {
             return Object.assign(base, SEED);
-          } // offline baked-in
+          }
           return base;
         }
         function persistLocal() {
+          if (!state.email) return; // no email = no slot to own the data
           state.updated_at = new Date().toISOString();
           if (!state.created_at) state.created_at = state.updated_at;
           try {
-            localStorage.setItem(LSKEY, JSON.stringify(state));
+            localStorage.setItem(slotKey(state.email), JSON.stringify(state));
+            localStorage.setItem(LSACTIVE, state.email);
           } catch (e) {}
           flagDirty();
           queueServerSave();
@@ -4055,17 +4138,77 @@
 
           var err = el("div", "err", "");
           gate.appendChild(err);
+          // Email change is destructive (N=1: the old slot is deleted). Ask first.
+          // Copy is model-driven; {{from}}/{{to}} splice in like {{terms}}/{{privacy}}.
+          function confirmChange(from, to) {
+            return new Promise(function (resolve) {
+              var back = document.getElementById("changeModal");
+              var fill = function (s) {
+                return String(s || "")
+                  .split("{{from}}")
+                  .join(from)
+                  .split("{{to}}")
+                  .join(to);
+              };
+              back.querySelector("#changeTitle").textContent = CVS.changeTitle || "Change your email address?";
+              back.querySelector("#changeBody").textContent = fill(
+                CVS.changeBody ||
+                  "Changing email from {{from}} to {{to}} will reset the guide and clear any previous answers. Continue?",
+              );
+              var okBtn = back.querySelector("#changeOk");
+              var noBtn = back.querySelector("#changeCancel");
+              okBtn.textContent = fill(CVS.changeOk || "Change email");
+              noBtn.textContent = fill(CVS.changeCancel || "Cancel");
+              function done(val) {
+                back.classList.remove("open");
+                okBtn.onclick = null;
+                noBtn.onclick = null;
+                resolve(val);
+              }
+              okBtn.onclick = function () {
+                done(true);
+              };
+              noBtn.onclick = function () {
+                done(false);
+              };
+              back.classList.add("open");
+              positionModal(back.querySelector(".modal"));
+            });
+          }
           btn.addEventListener("click", function () {
             var v = (inp.value || "").trim();
             if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) {
               err.textContent = CVS.emailError || "Please enter a valid email address.";
               return;
             }
+            // Email change is destructive (N=1: the old slot is DELETED, never detached, so
+            // answers can't ride to a new address). Confirm first, then re-enter this handler
+            // with the wipe already done. CASE-INSENSITIVE: a case-only edit is NOT a change.
+            // MUST run BEFORE the consent check: changing A->B re-arms a live unchecked box for
+            // B, so the consent guard would return early and the dialog would never open.
+            var prevEmail = state.email;
+            if (prevEmail && prevEmail.toLowerCase() !== v.toLowerCase() && !btn._changeOkd) {
+              confirmChange(prevEmail, v).then(function (okd) {
+                if (!okd) return; // CANCEL: nothing deleted, no check run, B stays in the field
+                wipeSlot(prevEmail);
+                state.data = {};
+                state.consent = null;
+                state.created_at = null;
+                state.updated_at = null;
+                btn._changeOkd = true;
+                btn.click();
+              });
+              return;
+            }
+            // NB: the latch is NOT cleared here. Consent can still reject below (a changed email
+            // re-arms a live unchecked box), and clearing early would re-open the dialog on the
+            // next click — wiping again and looping. It clears only once we're through.
             if (!cbox.checked && !consentMatches()) {
               err.textContent = CVS.consentError || "Please accept the Terms of Use and Privacy Policy to continue.";
               return;
             }
             err.textContent = "";
+            btn._changeOkd = false;
             state.email = v;
             // record consent on FIRST accept for this address; never overwrite an existing `at`
             if (!consentMatches()) {
@@ -4093,14 +4236,19 @@
             if (SERVER_ENABLED && isOnline()) {
               loadFromServer(v)
                 .then(function (server) {
+                  if (!server) {
+                    // NOT FOUND = the record was deleted (or never existed). The rule: local data
+                    // for an email the DB doesn't know cannot survive. Straight overwrite below is
+                    // safe post-reset — every row was written by this same scheme, so no reconcile.
+                    wipeSlot(v);
+                    state.data = {};
+                    state.created_at = null;
+                    state.updated_at = null;
+                  }
                   if (server) {
-                    var local = state.data && Object.keys(state.data).length ? state : null;
-                    var winner = pickNewest(local, server);
-                    if (winner === server) {
-                      state.data = server.data || {};
-                      state.created_at = server.created_at;
-                      state.updated_at = server.updated_at;
-                    }
+                    state.data = server.data || {};
+                    state.created_at = server.created_at;
+                    state.updated_at = server.updated_at;
                     // consent is EVIDENCE, not data: a stored server acceptance for this address
                     // always wins, regardless of pickNewest, so the original `at` is never rewritten.
                     if (
@@ -4462,6 +4610,7 @@
               email: state.email,
               data: state.data,
               consent: state.consent || null,
+              client_id: clientId(),
               created_at: state.created_at,
               updated_at: state.updated_at,
             }),
@@ -4473,7 +4622,10 @@
         // Load a record by email. Resolves to the record object or null; rejects on network error.
         function loadFromServer(email) {
           var url =
-            SB_REST + "?email=eq." + encodeURIComponent(email) + "&select=email,data,consent,created_at,updated_at";
+            SB_REST +
+            "?email=eq." +
+            encodeURIComponent(email) +
+            "&select=email,data,consent,client_id,created_at,updated_at";
           return fetch(url, { headers: sbHeaders() })
             .then(function (r) {
               if (!r.ok) throw new Error("load " + r.status);
