@@ -1428,6 +1428,7 @@
       }
       .gate .consent input:disabled {
         cursor: default;
+        filter: sepia(0.8);
       }
       .gate .consent a {
         color: var(--green-deep);
@@ -4134,7 +4135,13 @@
           paintConsent();
           gate.appendChild(wrap);
           // email identity changed → consent does not carry; re-arm as a first-time run
-          inp.addEventListener("input", paintConsent);
+          inp.addEventListener("input", function () {
+            // Editing the address invalidates any error shown for the PREVIOUS value.
+            // Without this, a consentError survives a revert to a consented address and
+            // contradicts the "previously accepted" receipt paintConsent() just drew.
+            err.textContent = "";
+            paintConsent();
+          });
 
           var err = el("div", "err", "");
           gate.appendChild(err);
