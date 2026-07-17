@@ -4181,15 +4181,23 @@
               err.textContent = CVS.emailError || "Please enter a valid email address.";
               return;
             }
+            // CONSENT FIRST (S35, client's call): nobody is asked to confirm a destructive
+            // change before they've agreed to the terms. consentMatches() reads the INPUT field,
+            // not state.email, so it already tests the address being SUBMITTED — a changed
+            // address has no stored consent, so the live box must be ticked. That is why this
+            // can sit above the change check without re-creating the S33 CONSENT-ORDER DEADLOCK:
+            // the thing the guard tests (cbox.checked) is the thing the user can act on.
+            if (!cbox.checked && !consentMatches()) {
+              err.textContent = CVS.consentError || "Please accept the Terms of Use and Privacy Policy to continue.";
+              return;
+            }
             // Email change is destructive (N=1: the old slot is DELETED, never detached, so
             // answers can't ride to a new address). Confirm first, then re-enter this handler
             // with the wipe already done. CASE-INSENSITIVE: a case-only edit is NOT a change.
-            // MUST run BEFORE the consent check: changing A->B re-arms a live unchecked box for
-            // B, so the consent guard would return early and the dialog would never open.
             var prevEmail = state.email;
             if (prevEmail && prevEmail.toLowerCase() !== v.toLowerCase() && !btn._changeOkd) {
               confirmChange(prevEmail, v).then(function (okd) {
-                if (!okd) return; // CANCEL: nothing deleted, no check run, B stays in the field
+                if (!okd) return; // CANCEL: nothing deleted, no check run, everything as it was
                 wipeSlot(prevEmail);
                 state.data = {};
                 state.consent = null;
@@ -4198,13 +4206,6 @@
                 btn._changeOkd = true;
                 btn.click();
               });
-              return;
-            }
-            // NB: the latch is NOT cleared here. Consent can still reject below (a changed email
-            // re-arms a live unchecked box), and clearing early would re-open the dialog on the
-            // next click — wiping again and looping. It clears only once we're through.
-            if (!cbox.checked && !consentMatches()) {
-              err.textContent = CVS.consentError || "Please accept the Terms of Use and Privacy Policy to continue.";
               return;
             }
             err.textContent = "";
