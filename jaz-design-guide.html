@@ -3909,17 +3909,17 @@
         // ---- panel builders ----
         // ---- cover tagline letter animation · TUNABLES ----
         var SUB_ANIM = {
-          stagger: 90, // ms between each letter starting
+          stagger: 100, // ms between each letter starting
           dur: 400, // ms for a letter to settle (opacity + scale)
           commaPause: 700, // ms extra pause AFTER a comma has landed
           startSizeRem: 2, // letter starts at this size
           finalSizeRem: 1.6, // must match the .cover .sub font-size
           startOpacity: 0.4, // letter's opacity at the instant it appears
           glowSize: 1.6, // glow size relative to the settled glyph
-          glowBlurPx: 8, // mist softness
-          glowOpacity: 0.5, // glow opacity once the letter has settled
-          glowHold: 300, // ms the glow lingers at full before fading
-          glowFade: 700, // ms for the glow to fade away
+          glowBlurPx: 7, // mist softness
+          glowOpacity: 0.4, // glow opacity once the letter has settled
+          glowHold: 100, // ms the glow lingers at full before fading
+          glowFade: 500, // ms for the glow to fade away
           viewThreshold: 1, // 1 = fully in view; auto-drops to 0.5 for tall blocks
         };
 
