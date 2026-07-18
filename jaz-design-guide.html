@@ -1151,6 +1151,15 @@
           margin: 16px auto 4px;
           shape-outside: none;
         }
+        /* the notice pill sits mid-sentence — keep it inline, unlike the how-to explainer */
+        .explainer-btn.in-notice {
+          display: inline-flex;
+          width: auto;
+          margin: 0 2px;
+        }
+      }
+      #printNotice .save-btn {
+        margin-left: 0;
       }
       /* centered logo header — DOWNLOADED/finalized file only (not on-site) */
       .dl-logo {
@@ -3233,11 +3242,13 @@
       <div class="modal">
         <h2 id="printNoticeTitle">Printing your guide</h2>
         <p>
-          To print this guide accurately, click the "Save My Guide" button. Select "download" and then reopen your guide
-          on your device.
+          To print this guide, click the
+          <span class="save-btn explainer-btn in-notice" aria-hidden="true">Save My Guide</span>
+          button in the top right. Select <em>Download a copy</em> or <em>Email Guide</em>. Reopen your guide on your
+          device and print.
         </p>
         <div class="row" style="justify-content: flex-end">
-          <button type="button" class="btn" id="printNoticeOk">Got it</button>
+          <button type="button" class="save-btn" id="printNoticeOk">Got it</button>
         </div>
       </div>
     </div>
