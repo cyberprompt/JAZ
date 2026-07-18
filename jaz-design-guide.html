@@ -1985,6 +1985,12 @@
       }
 
       /* ---- footer nav ---- */
+      #conflictModal.modal-back {
+        justify-content: center;
+      }
+      body.conflict-open .pager {
+        visibility: hidden;
+      }
       .pager {
         position: static;
         z-index: 35;
@@ -4962,6 +4968,7 @@
           );
           function choose(useServer) {
             back.classList.remove("open");
+            document.body.classList.remove("conflict-open");
             if (window.__jazGrowForModal) window.__jazGrowForModal(0);
             if (useServer) {
               state.data = server.data || {};
@@ -4983,11 +4990,9 @@
             choose(false);
           };
           back.classList.add("open");
-          if (window.__jazGrowForModal) {
-            window.__jazGrowForModal(back.querySelector(".modal").scrollHeight + 260);
-          }
+          document.body.classList.add("conflict-open");
           requestViewport();
-          requestAnimationFrame(positionModal);
+          if (window.__jazGrowForModal) window.__jazGrowForModal(window.__jazVpH || 0);
         }
         function pickNewest(local, server) {
           if (!server) return local;
@@ -5266,8 +5271,12 @@
             top: parseInt(d.top, 10) || 0,
             height: parseInt(d.height, 10) || window.innerHeight,
           };
+          window.__jazVpH = _vp.height;
           if (modal.classList.contains("open")) positionModal();
           if (document.getElementById("receiptDrawer").classList.contains("open")) positionDrawer();
+          if (document.body.classList.contains("conflict-open") && window.__jazGrowForModal) {
+            window.__jazGrowForModal(_vp.height);
+          }
         });
         function closeCreate() {
           modal.classList.remove("open");
