@@ -4983,8 +4983,10 @@
           };
           back.classList.add("open");
           document.body.classList.add("conflict-open");
-          requestViewport();
-          if (window.__jazGrowForModal) window.__jazGrowForModal(window.__jazVpH || 0);
+          var _cm = back.querySelector(".modal");
+          var _cmH = _cm ? _cm.offsetHeight : 220;
+          if (window.__jazGrowForModal) window.__jazGrowForModal(_cmH + 160);
+          if (_cm) _cm.style.setProperty("--modal-top", "80px");
         }
         function pickNewest(local, server) {
           if (!server) return local;
@@ -5266,14 +5268,6 @@
           window.__jazVpH = _vp.height;
           if (modal.classList.contains("open")) positionModal();
           if (document.getElementById("receiptDrawer").classList.contains("open")) positionDrawer();
-          if (document.body.classList.contains("conflict-open") && window.__jazGrowForModal && !window.__jazModalH) {
-            window.__jazGrowForModal(_vp.height);
-            var cmEl = document.querySelector("#conflictModal .modal");
-            if (cmEl) {
-              var cmTop = _vp.top + Math.max(20, (_vp.height - cmEl.offsetHeight) / 2);
-              cmEl.style.setProperty("--modal-top", Math.round(cmTop) + "px");
-            }
-          }
         });
         function closeCreate() {
           modal.classList.remove("open");
