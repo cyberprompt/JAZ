@@ -4962,6 +4962,7 @@
           );
           function choose(useServer) {
             back.classList.remove("open");
+            if (window.__jazGrowForModal) window.__jazGrowForModal(0);
             if (useServer) {
               state.data = server.data || {};
               state.created_at = server.created_at || state.created_at;
@@ -4982,6 +4983,9 @@
             choose(false);
           };
           back.classList.add("open");
+          if (window.__jazGrowForModal) {
+            window.__jazGrowForModal(back.querySelector(".modal").scrollHeight + 260);
+          }
           requestViewport();
           requestAnimationFrame(positionModal);
         }
@@ -5884,7 +5888,8 @@
           var b = document.body,
             d = document.documentElement;
           var bodyH = Math.max(b.offsetHeight, d.offsetHeight);
-          return h > 0 ? h : bodyH;
+          var base = h > 0 ? h : bodyH;
+          return window.__jazModalH > 0 ? Math.max(base, window.__jazModalH) : base;
         }
         function send() {
           var h = measure();
@@ -5894,6 +5899,11 @@
           }
         }
         window.__jazReportHeight = send;
+        window.__jazModalH = 0;
+        window.__jazGrowForModal = function (px) {
+          window.__jazModalH = px > 0 ? px : 0;
+          send();
+        };
         function ping() {
           if (timer) return;
           timer = setTimeout(function () {
