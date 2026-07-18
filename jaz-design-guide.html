@@ -97,6 +97,35 @@
         opacity: 1;
         pointer-events: auto;
       }
+      .load-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: var(--bg, #faf8f5);
+        color: var(--ink-soft, #5b6169);
+        font-size: 15px;
+      }
+      .load-overlay.open {
+        display: flex;
+      }
+      .load-spinner {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 3px solid rgba(43, 160, 184, 0.25);
+        border-top-color: var(--teal, #2ba0b8);
+        animation: load-spin 0.8s linear infinite;
+      }
+      @keyframes load-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
       .modal {
         background: var(--card);
         border-radius: var(--radius);
@@ -255,6 +284,46 @@
       }
       .modal-actions--row .nav-btn {
         min-width: 96px;
+      }
+      .conflict-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .conflict-card {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        text-align: left;
+        padding: 12px 14px;
+        border: 2px solid var(--sage);
+        border-radius: 10px;
+        background: var(--paper);
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          box-shadow 0.15s,
+          transform 0.15s;
+      }
+      .conflict-card:hover {
+        border-color: var(--teal);
+        background: var(--paper);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(44, 49, 56, 0.12);
+      }
+      .conflict-card:focus-visible {
+        outline: 3px solid var(--teal);
+        outline-offset: 2px;
+      }
+      .conflict-card-label {
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .conflict-card-meta {
+        font-size: 0.86rem;
+        color: var(--jaz-blue);
       }
       /* ── Cost-totals drawer: slides in from the right, fits the visible band ── */
       .drawer-back {
@@ -2132,7 +2201,7 @@
             "text": "jazdesign.com/guide",
             "url": "https://www.jazdesign.com/guide"
           },
-          "schemaVersion": 16,
+          "schemaVersion": 17,
           "sourcePdf": "guide_optimizedFINAL.pdf",
           "notes": "Field schema extracted from the 12-page PDF. Drives the HTML template, autosave keys, and the Supabase JSON payload. Every input field has a stable `id` used as the storage key; ids are never renamed once shipped (renaming breaks saved records).",
           "fieldTypes": {
@@ -2152,6 +2221,17 @@
             "email": "kitchenguide@jazdesign.com",
             "web": "jazdesign.com"
           }
+        },
+        "ui": {
+          "loading": "Loading your previous answers…",
+          "conflictTitle": "Which answers should we use?",
+          "conflictBody": "This guide has answers saved online that differ from what's on this device.",
+          "conflictServerLabel": "Saved online",
+          "conflictLocalLabel": "On this device",
+          "conflictAnswered": "{{n}} answered",
+          "conflictUpdated": "updated {{when}}",
+          "conflictUseServer": "Use online answers",
+          "conflictUseLocal": "Keep this device's answers"
         },
         "cover": {
           "blocks": {
@@ -3256,6 +3336,28 @@
       <div class="modal">
         <h2 id="continuingTitle">Continuing…</h2>
       </div>
+    </div>
+
+    <div class="modal-back" id="conflictModal" role="dialog" aria-modal="true" aria-labelledby="conflictTitle">
+      <div class="modal">
+        <h2 id="conflictTitle">Which answers should we use?</h2>
+        <p class="modal-sub" id="conflictBody"></p>
+        <div class="conflict-cards">
+          <button class="conflict-card" id="conflictServer" type="button">
+            <span class="conflict-card-label" id="conflictServerLabel">Saved online</span>
+            <span class="conflict-card-meta" id="conflictServerMeta"></span>
+          </button>
+          <button class="conflict-card" id="conflictLocal" type="button">
+            <span class="conflict-card-label" id="conflictLocalLabel">On this device</span>
+            <span class="conflict-card-meta" id="conflictLocalMeta"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="load-overlay" id="loadOverlay" role="status" aria-live="polite">
+      <div class="load-spinner" aria-hidden="true"></div>
+      <div id="loadOverlayText">Loading…</div>
     </div>
 
     <div class="modal-back" id="printNotice" role="dialog" aria-modal="true" aria-labelledby="printNoticeTitle">
@@ -4751,6 +4853,118 @@
           return h;
         }
         // newest-wins picker (server vs local); either may be null. Never throws.
+        var CONFLICT_META_IDS = ["contact_name", "contact_phone", "contact_city", "contact_state", "jaz_comments"];
+        function isEmptyVal(v) {
+          if (v == null || v === "") return true;
+          if (Array.isArray(v))
+            return (
+              v.filter(function (x) {
+                return x !== "" && x != null;
+              }).length === 0
+            );
+          if (typeof v === "object") {
+            if (Array.isArray(v.selected)) return v.selected.length === 0;
+            var ks = Object.keys(v);
+            if (!ks.length) return true;
+            var allRows = ks.every(function (k) {
+              return v[k] && typeof v[k] === "object" && "checked" in v[k];
+            });
+            if (allRows)
+              return ks.every(function (k) {
+                return !v[k].checked;
+              });
+            return false;
+          }
+          return false;
+        }
+        function answeredSet(data) {
+          var d = data || {},
+            out = {};
+          Object.keys(d).forEach(function (k) {
+            if (k.indexOf("__") === 0) return;
+            if (/__base$/.test(k)) return;
+            if (CONFLICT_META_IDS.indexOf(k) !== -1) return;
+            if (isEmptyVal(d[k])) return;
+            out[k] = JSON.stringify(d[k]);
+          });
+          return out;
+        }
+        function answeredCount(data) {
+          return Object.keys(answeredSet(data)).length;
+        }
+        function answeredDiffers(a, b) {
+          var A = answeredSet(a),
+            B = answeredSet(b);
+          var ka = Object.keys(A),
+            kb = Object.keys(B);
+          if (ka.length !== kb.length) return true;
+          for (var i = 0; i < ka.length; i++) {
+            if (A[ka[i]] !== B[ka[i]]) return true;
+          }
+          return false;
+        }
+        function fmtWhen(iso) {
+          if (!iso) return "just now";
+          var t = Date.parse(iso);
+          if (isNaN(t)) return "recently";
+          var s = Math.floor((Date.now() - t) / 1000);
+          if (s < 60) return "just now";
+          var m = Math.floor(s / 60);
+          if (m < 60) return m + (m === 1 ? " min ago" : " min ago");
+          var h = Math.floor(m / 60);
+          if (h < 24) return h + (h === 1 ? " hour ago" : " hours ago");
+          var dd = Math.floor(h / 24);
+          if (dd < 30) return dd + (dd === 1 ? " day ago" : " days ago");
+          return new Date(t).toLocaleDateString();
+        }
+        // Surface 2: server/local answers diverge -> ask which wins, then persist the choice
+        // so the other origin converges on its next boot. server = {data,consent,created_at,updated_at}.
+        function resolveConflict(server, onDone) {
+          var ui = MODEL.ui || {};
+          function fill(id, tmpl, n, when) {
+            var elx = document.getElementById(id);
+            if (!elx) return;
+            elx.textContent = (tmpl || "").replace("{{n}}", n).replace("{{when}}", when);
+          }
+          var back = document.getElementById("conflictModal");
+          document.getElementById("conflictBody").textContent = ui.conflictBody || "";
+          document.getElementById("conflictServerLabel").textContent = ui.conflictServerLabel || "Saved online";
+          document.getElementById("conflictLocalLabel").textContent = ui.conflictLocalLabel || "On this device";
+          fill(
+            "conflictServerMeta",
+            (ui.conflictAnswered || "{{n}} answered") + " · " + (ui.conflictUpdated || "updated {{when}}"),
+            answeredCount(server.data),
+            fmtWhen(server.updated_at),
+          );
+          fill(
+            "conflictLocalMeta",
+            (ui.conflictAnswered || "{{n}} answered") + " · " + (ui.conflictUpdated || "updated {{when}}"),
+            answeredCount(state.data),
+            fmtWhen(state.updated_at),
+          );
+          function choose(useServer) {
+            back.classList.remove("open");
+            if (useServer) {
+              state.data = server.data || {};
+              state.created_at = server.created_at || state.created_at;
+              state.updated_at = server.updated_at || state.updated_at;
+              rerender();
+            }
+            // persist the winning side so the other origin converges next load
+            state.updated_at = new Date().toISOString();
+            persistLocal();
+            flagDirty();
+            queueServerSave();
+            onDone();
+          }
+          document.getElementById("conflictServer").onclick = function () {
+            choose(true);
+          };
+          document.getElementById("conflictLocal").onclick = function () {
+            choose(false);
+          };
+          back.classList.add("open");
+        }
         function pickNewest(local, server) {
           if (!server) return local;
           if (!local) return server;
@@ -5529,44 +5743,99 @@
             app.appendChild(foot);
           })();
 
-          // Opening state:
-          //  - gated (no email) -> cover/Welcome
-          //  - returning w/ a valid saved panel -> ask "Continue where you left off?"
-          //  - returning, no saved panel -> Intro
-          var lp = Number(state.data.__lastPanel);
-          var canResume = !gated && Number.isInteger(lp) && lp >= 1 && lp < panels.length;
-          if (gated) {
-            goTo(0);
-          } else if (canResume && lp === 1) {
-            // already on the last-viewed panel: no choice needed, just acknowledge
-            goTo(1);
-            BOOTING = false;
-            var cm = document.getElementById("continuingModal");
-            cm.classList.add("open");
-            setTimeout(function () {
-              cm.classList.remove("open");
-            }, 1500);
-          } else if (canResume) {
-            goTo(1); // base paint; BOOTING suppresses the __lastPanel write here
-            var rm = document.getElementById("resumeModal");
-            rm.classList.add("open");
-            document.getElementById("resumeYes").addEventListener("click", function () {
-              rm.classList.remove("open");
-              BOOTING = false;
-              goTo(lp);
-            });
-            document.getElementById("resumeNo").addEventListener("click", function () {
-              rm.classList.remove("open");
-              BOOTING = false;
+          // Surface 1: the server is the source of truth. On a resumed session the gate
+          // never runs (loadFromServer's only other caller), so read the DB HERE before the
+          // first paint — otherwise goTo(1)'s persistLocal pushes stale local state over the
+          // richer DB row (the S37 clobber). Falls soft to local when offline / no row / error.
+          // Surface 2 will replace pickNewest here with an answered-set diff + conflict prompt.
+          function openingState() {
+            // Opening state:
+            //  - gated (no email) -> cover/Welcome
+            //  - returning w/ a valid saved panel -> ask "Continue where you left off?"
+            //  - returning, no saved panel -> Intro
+            var lp = Number(state.data.__lastPanel);
+            var canResume = !gated && Number.isInteger(lp) && lp >= 1 && lp < panels.length;
+            if (gated) {
+              goTo(0);
+            } else if (canResume && lp === 1) {
+              // already on the last-viewed panel: no choice needed, just acknowledge
               goTo(1);
-            });
-          } else {
-            goTo(1);
+              BOOTING = false;
+              var cm = document.getElementById("continuingModal");
+              cm.classList.add("open");
+              setTimeout(function () {
+                cm.classList.remove("open");
+              }, 1500);
+            } else if (canResume) {
+              goTo(1); // base paint; BOOTING suppresses the __lastPanel write here
+              var rm = document.getElementById("resumeModal");
+              rm.classList.add("open");
+              document.getElementById("resumeYes").addEventListener("click", function () {
+                rm.classList.remove("open");
+                BOOTING = false;
+                goTo(lp);
+              });
+              document.getElementById("resumeNo").addEventListener("click", function () {
+                rm.classList.remove("open");
+                BOOTING = false;
+                goTo(1);
+              });
+            } else {
+              goTo(1);
+            }
+            if (!canResume) BOOTING = false;
+            // Safari (embedded) has been observed showing the chooser on reopen; force it shut.
+            document.getElementById("createModal").classList.remove("open");
+            setSync("saved");
           }
-          if (!canResume) BOOTING = false;
-          // Safari (embedded) has been observed showing the chooser on reopen; force it shut.
-          document.getElementById("createModal").classList.remove("open");
-          setSync("saved");
+          // --- dispatch: read server before openingState when there's an email to look up ---
+          if (state.email && SERVER_ENABLED && isOnline()) {
+            var lov = document.getElementById("loadOverlay");
+            var lovT = document.getElementById("loadOverlayText");
+            if (lovT) lovT.textContent = (MODEL.ui && MODEL.ui.loading) || "Loading…";
+            if (lov) lov.classList.add("open");
+            var hideLov = function () {
+              if (lov) lov.classList.remove("open");
+            };
+            loadFromServer(state.email)
+              .then(function (server) {
+                // Consent is EVIDENCE, adopted independently of the data merge (see CONSENT GATE).
+                if (
+                  server &&
+                  server.consent &&
+                  server.consent.agreed &&
+                  (server.consent.email || "").toLowerCase() === (state.email || "").toLowerCase()
+                ) {
+                  state.consent = server.consent;
+                }
+                hideLov();
+                if (server && answeredDiffers(state.data, server.data)) {
+                  if (answeredCount(state.data) === 0) {
+                    // fresh device, nothing local to lose -> load server silently, no prompt.
+                    // Persist immediately so the empty local slot converges on the server and a
+                    // later goTo/persistLocal can't push a thinner state back over the row.
+                    state.data = server.data || {};
+                    state.created_at = server.created_at || state.created_at;
+                    state.updated_at = server.updated_at || state.updated_at;
+                    persistLocal();
+                    rerender();
+                    openingState();
+                  } else {
+                    // both sides populated + divergent -> let the user choose, THEN open
+                    resolveConflict(server, openingState);
+                  }
+                } else {
+                  // identical answered-set (or no row): keep local, proceed
+                  openingState();
+                }
+              })
+              .catch(function () {
+                hideLov();
+                openingState();
+              });
+          } else {
+            openingState();
+          }
         }
         boot();
       })();
