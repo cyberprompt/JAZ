@@ -285,11 +285,29 @@
       .modal-actions--row .nav-btn {
         min-width: 96px;
       }
+      #conflictModal .modal {
+        overflow: visible;
+      }
       .conflict-cards {
         display: flex;
         flex-direction: column;
         gap: 10px;
         margin-top: 14px;
+        overflow-y: auto;
+        max-height: calc(var(--modal-maxh, 90vh) - 120px);
+        scrollbar-width: thin;
+        scrollbar-color: var(--sage) transparent;
+        border-radius: 10px;
+      }
+      .conflict-cards::-webkit-scrollbar {
+        width: 7px;
+      }
+      .conflict-cards::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .conflict-cards::-webkit-scrollbar-thumb {
+        background: var(--sage);
+        border-radius: 7px;
       }
       .conflict-card {
         display: flex;
@@ -4964,6 +4982,8 @@
             choose(false);
           };
           back.classList.add("open");
+          requestViewport();
+          requestAnimationFrame(positionModal);
         }
         function pickNewest(local, server) {
           if (!server) return local;
