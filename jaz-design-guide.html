@@ -5901,8 +5901,19 @@
         window.__jazReportHeight = send;
         window.__jazModalH = 0;
         window.__jazGrowForModal = function (px) {
-          window.__jazModalH = px > 0 ? px : 0;
-          send();
+          var open = px > 0;
+          if (window.parent !== window) {
+            /* embedded: let the PARENT take the frame full-viewport so the
+               fixed backdrop covers the whole screen (child fixed:inset only
+               covers the frame box). Parent restores reported height on close. */
+            try {
+              window.parent.postMessage({ type: "jazguide:modal", open: open }, "*");
+            } catch (e) {}
+          } else {
+            /* standalone/offline: no parent frame to size; the fixed backdrop
+               already covers the real window, so nothing to grow. */
+            window.__jazModalH = 0;
+          }
         };
         function ping() {
           if (timer) return;
