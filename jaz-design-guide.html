@@ -293,11 +293,6 @@
         flex-direction: column;
         gap: 10px;
         margin-top: 14px;
-        overflow-y: auto;
-        max-height: calc(var(--modal-maxh, 90vh) - 120px);
-        scrollbar-width: thin;
-        scrollbar-color: var(--sage) transparent;
-        border-radius: 10px;
       }
       .conflict-cards::-webkit-scrollbar {
         width: 7px;
@@ -5274,9 +5269,6 @@
           window.__jazVpH = _vp.height;
           if (modal.classList.contains("open")) positionModal();
           if (document.getElementById("receiptDrawer").classList.contains("open")) positionDrawer();
-          if (document.body.classList.contains("conflict-open") && window.__jazGrowForModal) {
-            window.__jazGrowForModal(_vp.height);
-          }
         });
         function closeCreate() {
           modal.classList.remove("open");
