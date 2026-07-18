@@ -485,6 +485,11 @@
       .rcpt-btn:hover {
         background: rgba(43, 160, 184, 0.1);
       }
+      @media print {
+        .print-btn {
+          display: none;
+        }
+      }
       .rcpt-field-btn {
         border: none;
         background: transparent;
@@ -1151,6 +1156,15 @@
           margin: 16px auto 4px;
           shape-outside: none;
         }
+        /* the notice pill sits mid-sentence — keep it inline, unlike the how-to explainer */
+        .explainer-btn.in-notice {
+          display: inline-flex;
+          width: auto;
+          margin: 0 2px;
+        }
+      }
+      #printNotice .save-btn {
+        margin-left: 0;
       }
       /* centered logo header — DOWNLOADED/finalized file only (not on-site) */
       .dl-logo {
@@ -2032,6 +2046,21 @@
           </span>
         </a>
         <span class="sync" id="syncState"><span class="sync-dot"></span><span id="syncText">Waiting</span></span>
+        <button class="rcpt-btn print-btn" id="printBtn" type="button" aria-label="Print" title="Print">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9" />
+            <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+            <rect x="6" y="14" width="12" height="8" />
+          </svg>
+        </button>
         <button class="rcpt-btn" id="receiptBtn" type="button" aria-label="Show cost totals" title="Show cost totals">
           <svg
             width="20"
@@ -2232,11 +2261,13 @@
       <div class="modal">
         <h2 id="printNoticeTitle">Printing your guide</h2>
         <p>
-          To print this guide accurately, click the "Save My Guide" button. Select "download" and then reopen your guide
-          on your device.
+          To print this guide, click the
+          <span class="save-btn explainer-btn in-notice" aria-hidden="true">Save My Guide</span>
+          button in the top right. Select <em>Download a copy</em> or <em>Email Guide</em>. Reopen your guide on your
+          device and print.
         </p>
         <div class="row" style="justify-content: flex-end">
-          <button type="button" class="btn" id="printNoticeOk">Got it</button>
+          <button type="button" class="save-btn" id="printNoticeOk">Got it</button>
         </div>
       </div>
     </div>
@@ -4441,6 +4472,15 @@
           var createBtnEl = document.getElementById("createBtn");
           if (createBtnEl) createBtnEl.addEventListener("click", openCreate);
           document.getElementById("receiptBtn").addEventListener("click", openReceipt);
+          document.getElementById("printBtn").addEventListener("click", function () {
+            // Embedded: Ctrl+P/menu print hits the PARENT document and prints the Squarespace
+            // page, so offer guidance instead. Standalone/downloaded: print normally.
+            if (window.parent !== window) {
+              openPrintNotice();
+              return;
+            }
+            window.print();
+          });
           document.getElementById("receiptClose").addEventListener("click", closeReceipt);
           document.getElementById("receiptDrawer").addEventListener("click", function (e) {
             if (e.target === document.getElementById("receiptDrawer")) closeReceipt();
