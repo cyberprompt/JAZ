@@ -131,11 +131,6 @@
         border-radius: var(--radius);
         max-width: 440px;
         width: 100%;
-        /* Positioned + sized within the visitor's visible band. --modal-top and --modal-maxh
-            are set in px by openCreate(); fallbacks keep standalone/offline centering sane.
-            Inner scroll (overflow:auto) guarantees all controls are reachable when the band
-            is short. The 40px keeps ~20px margin top+bottom inside the band. */
-        margin-top: var(--modal-top, 8vh);
         max-height: var(--modal-maxh, 90vh);
         overflow: auto;
         box-shadow: 0 20px 60px rgba(44, 49, 56, 0.28);
