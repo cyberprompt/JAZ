@@ -838,12 +838,16 @@
       /* ambient autosave / sync indicator — informs, never asks for action */
       .sync {
         margin-left: auto;
+        order: 4;
         display: flex;
         align-items: center;
         gap: 7px;
         font-size: 12.5px;
         color: var(--ink-soft);
         white-space: nowrap;
+      }
+      .save-btn {
+        order: 5;
       }
       .sync-dot {
         width: 8px;
@@ -873,6 +877,15 @@
       .topbar-inner .save-btn {
         margin-left: 14px;
       }
+      .icon-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        order: 3;
+      }
+      .topbar-row2 {
+        display: contents;
+      }
       /* when there are local-only (unsynced) changes, the button gains a subtle marker */
       .save-btn.has-changes::after {
         content: "";
@@ -894,19 +907,39 @@
           padding: 10px 14px;
           flex-wrap: wrap;
         }
-        .sync {
-          font-size: 11.5px;
-          order: 3;
-          flex-basis: 100%;
-          margin-left: 0;
-          margin-top: 2px;
+        /* row 1: logo (left) + Save button (right) */
+        .logo {
+          order: 1;
         }
         .save-btn {
+          order: 2;
           font-size: 13px;
           padding: 8px 16px;
         }
         .topbar-inner .save-btn {
           margin-left: auto;
+        }
+        /* row 2: icons (left) + save status (right) share one wrapped row */
+        .topbar-row2 {
+          display: flex;
+          order: 3;
+          flex-basis: 100%;
+          align-items: center;
+          gap: 8px;
+          margin-top: 2px;
+        }
+        .icon-group {
+          order: 0;
+          margin-left: 0;
+        }
+        .print-btn,
+        #receiptBtn {
+          margin-left: 0;
+        }
+        .sync {
+          font-size: 11.5px;
+          margin-left: auto;
+          margin-top: 0;
         }
       }
 
@@ -2130,39 +2163,47 @@
             <span class="wm-title">KITCHEN GUIDE</span>
           </span>
         </a>
-        <span class="sync" id="syncState"><span class="sync-dot"></span><span id="syncText">Waiting</span></span>
-        <button class="rcpt-btn print-btn" id="printBtn" type="button" aria-label="Print" title="Print">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round">
-            <polyline points="6 9 6 2 18 2 18 9" />
-            <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
-            <rect x="6" y="14" width="12" height="8" />
-          </svg>
-        </button>
-        <button class="rcpt-btn" id="receiptBtn" type="button" aria-label="Show cost totals" title="Show cost totals">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round">
-            <polygon
-              points="4 22.5 6.66 20.5 9.33 22.5 11.99 20.5 14.66 22.5 17.33 20.5 20 22.5 21 21.5 21 1.5 3 1.5 3 21.5 4 22.5" />
-            <path d="M10 13.5h2.5A1.5 1.5 0 0014 12a1.5 1.5 0 00-1.5-1.5h-1A1.5 1.5 0 0110 9a1.5 1.5 0 011.5-1.5H14" />
-            <line x1="12" y1="5.5" x2="12" y2="7.5" />
-            <line x1="12" y1="13.5" x2="12" y2="15.5" />
-          </svg>
-        </button>
+        <span class="topbar-row2"
+          ><span class="sync" id="syncState"><span class="sync-dot"></span><span id="syncText">Waiting</span></span>
+          <span class="icon-group"
+            ><button class="rcpt-btn print-btn" id="printBtn" type="button" aria-label="Print" title="Print">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+            </button>
+            <button
+              class="rcpt-btn"
+              id="receiptBtn"
+              type="button"
+              aria-label="Show cost totals"
+              title="Show cost totals">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <polygon
+                  points="4 22.5 6.66 20.5 9.33 22.5 11.99 20.5 14.66 22.5 17.33 20.5 20 22.5 21 21.5 21 1.5 3 1.5 3 21.5 4 22.5" />
+                <path
+                  d="M10 13.5h2.5A1.5 1.5 0 0014 12a1.5 1.5 0 00-1.5-1.5h-1A1.5 1.5 0 0110 9a1.5 1.5 0 011.5-1.5H14" />
+                <line x1="12" y1="5.5" x2="12" y2="7.5" />
+                <line x1="12" y1="13.5" x2="12" y2="15.5" />
+              </svg> </button></span
+        ></span>
         <button class="save-btn" id="createBtn" type="button">Save My Guide</button>
       </div>
     </header>
