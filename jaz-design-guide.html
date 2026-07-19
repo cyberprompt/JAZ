@@ -3909,43 +3909,59 @@
           }
 
           var drag = null;
+
           function attachDrag(row, handle) {
-            // Transform-based reorder: the DOM order stays FIXED during the drag.
-            // The dragged row is lifted (position:relative + translateY tracking the
-            // pointer, no lag). Every OTHER row slides by ±the dragged row's height via
-            // a translateY that TRANSITIONS — because these transforms actually change
-            // as the target slot changes, the CSS transition animates them smoothly
-            // (the old insertBefore approach never changed a transform, so nothing
-            // animated). Order is committed to the DOM once, on drop. (S19 rewrite.)
+            // Transform-based reorder: DOM order stays FIXED during the drag; the
+            // dragged row lifts (translateY tracking the pointer, no lag) and every
+            // OTHER row slides by ±dragH via a transitioned translateY. Order commits
+            // to the DOM once, on drop. (S19 rewrite.)
+            // MOBILE (S42): the row carries NO touch-action until armed, so a quick
+            // swipe scrolls the page normally. A ~250ms LONG-PRESS (or any mouse press)
+            // ARMS the drag — arming adds .dragging (touch-action:none in CSS) + captures
+            // the pointer. A pre-arm move past MOVE_TOL is a scroll: it cancels the arm
+            // and releases the gesture to the browser. A single `done` latch makes end()
+            // idempotent and prevents the multitouch listener/capture leak.
+            var ARM_MS = 250;
+            var MOVE_TOL = 8;
             row.addEventListener("pointerdown", function (e) {
               // whole row is the drag hit area; let the checkbox toggle normally
               if (e.target.closest("input")) return;
-              e.preventDefault();
               var rows = Array.prototype.slice.call(ranked.children);
               var grabIndex = rows.indexOf(row);
               if (grabIndex < 0) return;
-              // First: snapshot live geometry (handles wrapped/variable-height rows).
-              var rects = rows.map(function (r) {
-                var b = r.getBoundingClientRect();
-                return { top: b.top, height: b.height };
-              });
-              var dragH = rects[grabIndex].height;
+              var pid = e.pointerId;
+              var startX = e.clientX;
               var startY = e.clientY;
+              var curY = startY;
               var slot = grabIndex;
+              var rects = null;
+              var dragH = 0;
+              var armed = false;
+              var done = false;
+              var armTimer = null;
 
-              drag = { row: row, rows: rows };
-              try {
-                row.setPointerCapture(e.pointerId);
-              } catch (err) {}
-              row.classList.add("dragging");
-              // dragged row: no transition, tracks pointer 1:1
-              row.style.transition = "none";
-              row.style.zIndex = "5";
+              function arm() {
+                armTimer = null;
+                if (done) return;
+                armed = true;
+                // snapshot geometry AT ARM time (layout is settled; handles wrapping)
+                rects = rows.map(function (r) {
+                  var b = r.getBoundingClientRect();
+                  return { top: b.top, height: b.height };
+                });
+                dragH = rects[grabIndex].height;
+                drag = { row: row, rows: rows };
+                try {
+                  row.setPointerCapture(pid);
+                } catch (err) {}
+                row.classList.add("dragging");
+                row.style.transition = "none";
+                row.style.zIndex = "5";
+              }
 
               function apply() {
                 var dy = curY - startY;
                 row.style.transform = "translateY(" + dy + "px)";
-                // target slot from the dragged center vs each other row's midpoint
                 var center = rects[grabIndex].top + dragH / 2 + dy;
                 var s = 0;
                 for (var k = 0; k < rects.length; k++) {
@@ -3955,7 +3971,6 @@
                 }
                 if (s === slot) return;
                 slot = s;
-                // shift each other row: rows between old grab spot and the slot open a gap
                 rows.forEach(function (r, i) {
                   if (i === grabIndex) return;
                   var shift = 0;
@@ -3966,26 +3981,43 @@
                 });
               }
 
-              var curY = startY;
               function onMove(ev) {
-                if (!drag) return;
+                if (done) return;
+                if (!armed) {
+                  // pre-arm movement = the user is scrolling, not reordering: bail and
+                  // hand the gesture back to the browser (no capture was taken yet).
+                  if (Math.abs(ev.clientY - startY) > MOVE_TOL || Math.abs(ev.clientX - startX) > MOVE_TOL) {
+                    end();
+                  }
+                  return;
+                }
                 ev.preventDefault();
                 curY = ev.clientY;
                 apply();
               }
               function end() {
-                if (!drag) return;
+                if (done) return;
+                done = true;
+                if (armTimer) {
+                  clearTimeout(armTimer);
+                  armTimer = null;
+                }
                 window.removeEventListener("pointermove", onMove);
                 window.removeEventListener("pointerup", end);
                 window.removeEventListener("pointercancel", end);
-                // clear all inline styles; paint() will rebuild cleanly anyway
+                if (!armed) {
+                  drag = null;
+                  return; // quick tap / scroll — nothing to commit
+                }
+                try {
+                  row.releasePointerCapture(pid);
+                } catch (err) {}
                 rows.forEach(function (r) {
                   r.style.transition = "";
                   r.style.transform = "";
                   r.style.zIndex = "";
                 });
                 row.classList.remove("dragging");
-                // commit new order: move grabbed id to its slot
                 var ids = rows.map(function (r) {
                   return r.getAttribute("data-id");
                 });
@@ -3995,6 +4027,12 @@
                 drag = null;
                 persist();
                 paint();
+              }
+
+              if (e.pointerType === "touch") {
+                armTimer = setTimeout(arm, ARM_MS);
+              } else {
+                arm(); // mouse/pen: instant drag, no long-press
               }
               window.addEventListener("pointermove", onMove);
               window.addEventListener("pointerup", end);
