@@ -1746,11 +1746,15 @@
         cursor: default;
       }
 
+      .pri-ranked .pri-row {
+        /* only ranked rows are draggable; touch-action:none lets them own the drag
+           gesture. Unranked rows keep default touch-action so a swipe over them
+           scrolls the page (they fill the viewport on mobile — S42). */
+        touch-action: none;
+      }
       .pri-row {
         align-items: center;
         cursor: grab;
-        touch-action: none; /* row owns the gesture: instant drag anywhere; swipe-to-scroll must start off-row */
-        touch-action: pan-y; /* vertical swipe scrolls; a still long-press arms the drag */
         user-select: none;
         -webkit-user-select: none;
         -webkit-touch-callout: none; /* iOS: long-press must not open selection/callout */
