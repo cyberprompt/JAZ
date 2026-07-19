@@ -1743,9 +1743,7 @@
       .pri-row {
         align-items: center;
         cursor: grab;
-        /* NO touch-action: browser slop tolerates hold-jitter; a swipe scrolls
-           (pointercancel bails us); scroll is blocked only after arm via a
-           non-passive touchmove preventDefault in attachDrag. */
+        touch-action: none; /* row owns the gesture: instant drag anywhere; swipe-to-scroll must start off-row */
         touch-action: pan-y; /* vertical swipe scrolls; a still long-press arms the drag */
         user-select: none;
         -webkit-user-select: none;
@@ -3922,16 +3920,16 @@
             // dragged row lifts (translateY tracking the pointer, no lag) and every
             // OTHER row slides by ±dragH via a transitioned translateY. Order commits
             // to the DOM once, on drop. (S19 rewrite.)
-            // MOBILE (S42): the row carries NO touch-action until armed, so a quick
-            // swipe scrolls the page normally. A ~250ms LONG-PRESS (or any mouse press)
-            // ARMS the drag — arming adds .dragging (touch-action:none in CSS) + captures
-            // the pointer. A pre-arm move past MOVE_TOL is a scroll: it cancels the arm
-            // and releases the gesture to the browser. A single `done` latch makes end()
-            // idempotent and prevents the multitouch listener/capture leak.
-            var ARM_MS = 250;
+            // MOBILE (S42 final): .pri-row carries touch-action:none, so the drag is
+            // INSTANT from anywhere on the row and the browser never contends for the
+            // gesture (a page swipe must start off-row — accepted trade-off; long-press
+            // and pan-y variants both lost the scroll-vs-drag race to the browser).
+            // The `done` latch keeps end() idempotent and releasePointerCapture fixes
+            // the S42 multitouch listener/capture leak that froze page scrolling.
             row.addEventListener("pointerdown", function (e) {
               // whole row is the drag hit area; let the checkbox toggle normally
               if (e.target.closest("input")) return;
+              e.preventDefault();
               var rows = Array.prototype.slice.call(ranked.children);
               var grabIndex = rows.indexOf(row);
               if (grabIndex < 0) return;
@@ -3939,36 +3937,21 @@
               var startY = e.clientY;
               var curY = startY;
               var slot = grabIndex;
-              var rects = null;
-              var dragH = 0;
-              var armed = false;
               var done = false;
-              var armTimer = null;
+              // snapshot live geometry (handles wrapped/variable-height rows)
+              var rects = rows.map(function (r) {
+                var b = r.getBoundingClientRect();
+                return { top: b.top, height: b.height };
+              });
+              var dragH = rects[grabIndex].height;
 
-              function blockScroll(ev) {
-                if (armed && !done) ev.preventDefault();
-              }
-              function arm() {
-                armTimer = null;
-                if (done) return;
-                armed = true;
-                window.addEventListener("touchmove", blockScroll, {
-                  passive: false,
-                });
-                // snapshot geometry AT ARM time (layout is settled; handles wrapping)
-                rects = rows.map(function (r) {
-                  var b = r.getBoundingClientRect();
-                  return { top: b.top, height: b.height };
-                });
-                dragH = rects[grabIndex].height;
-                drag = { row: row, rows: rows };
-                try {
-                  row.setPointerCapture(pid);
-                } catch (err) {}
-                row.classList.add("dragging");
-                row.style.transition = "none";
-                row.style.zIndex = "5";
-              }
+              drag = { row: row, rows: rows };
+              try {
+                row.setPointerCapture(pid);
+              } catch (err) {}
+              row.classList.add("dragging");
+              row.style.transition = "none";
+              row.style.zIndex = "5";
 
               function apply() {
                 var dy = curY - startY;
@@ -3993,10 +3976,7 @@
               }
 
               function onMove(ev) {
-                if (done || !armed) return;
-                // Once armed we own the gesture (pointer captured). Before arming, a
-                // scroll is handled by touch-action:pan-y — the browser fires
-                // pointercancel, which cancels the arm timer. No manual move test.
+                if (done) return;
                 ev.preventDefault();
                 curY = ev.clientY;
                 apply();
@@ -4004,18 +3984,9 @@
               function end() {
                 if (done) return;
                 done = true;
-                if (armTimer) {
-                  clearTimeout(armTimer);
-                  armTimer = null;
-                }
-                window.removeEventListener("touchmove", blockScroll);
                 window.removeEventListener("pointermove", onMove);
                 window.removeEventListener("pointerup", end);
                 window.removeEventListener("pointercancel", end);
-                if (!armed) {
-                  drag = null;
-                  return; // quick tap / scroll — nothing to commit
-                }
                 try {
                   row.releasePointerCapture(pid);
                 } catch (err) {}
@@ -4036,11 +4007,6 @@
                 paint();
               }
 
-              if (e.pointerType === "touch") {
-                armTimer = setTimeout(arm, ARM_MS);
-              } else {
-                arm(); // mouse/pen: instant drag, no long-press
-              }
               window.addEventListener("pointermove", onMove);
               window.addEventListener("pointerup", end);
               window.addEventListener("pointercancel", end);
@@ -6142,35 +6108,6 @@
           if (open === lastOpen) return;
           lastOpen = open;
           document.body.classList.toggle("modal-open", open);
-          // ===== TEMP DEBUG (S42 mobile drag) — REMOVE BEFORE LAUNCH =====
-          (function () {
-            var box = document.createElement("div");
-            box.style.cssText =
-              "position:fixed;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,.85);color:#0f0;font:10px monospace;padding:4px;pointer-events:none;white-space:pre;line-height:1.35";
-            document.body.appendChild(box);
-            var lines = [];
-            var t0 = 0;
-            function log(msg) {
-              lines.push(msg);
-              if (lines.length > 6) lines.shift();
-              box.textContent = lines.join("\n");
-            }
-            ["pointerdown", "pointermove", "pointerup", "pointercancel"].forEach(function (t) {
-              document.addEventListener(
-                t,
-                function (e) {
-                  var inRow = e.target.closest && e.target.closest(".pri-row");
-                  if (!inRow && t !== "pointercancel") return;
-                  if (t === "pointerdown") t0 = Date.now();
-                  var tgt = e.target.className || e.target.tagName;
-                  if (typeof tgt !== "string") tgt = e.target.tagName;
-                  log(t + " +" + (Date.now() - t0) + "ms ptr=" + e.pointerType + " tgt=" + String(tgt).slice(0, 24));
-                },
-                true,
-              );
-            });
-          })();
-          // ===== END TEMP DEBUG =====
           if (embedded) {
             try {
               window.parent.postMessage({ type: "jazguide:modal", open: open }, "*");
