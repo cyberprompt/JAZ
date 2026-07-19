@@ -6132,6 +6132,35 @@
           if (open === lastOpen) return;
           lastOpen = open;
           document.body.classList.toggle("modal-open", open);
+          // ===== TEMP DEBUG (S42 mobile drag) — REMOVE BEFORE LAUNCH =====
+          (function () {
+            var box = document.createElement("div");
+            box.style.cssText =
+              "position:fixed;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,.85);color:#0f0;font:10px monospace;padding:4px;pointer-events:none;white-space:pre;line-height:1.35";
+            document.body.appendChild(box);
+            var lines = [];
+            var t0 = 0;
+            function log(msg) {
+              lines.push(msg);
+              if (lines.length > 6) lines.shift();
+              box.textContent = lines.join("\n");
+            }
+            ["pointerdown", "pointermove", "pointerup", "pointercancel"].forEach(function (t) {
+              document.addEventListener(
+                t,
+                function (e) {
+                  var inRow = e.target.closest && e.target.closest(".pri-row");
+                  if (!inRow && t !== "pointercancel") return;
+                  if (t === "pointerdown") t0 = Date.now();
+                  var tgt = e.target.className || e.target.tagName;
+                  if (typeof tgt !== "string") tgt = e.target.tagName;
+                  log(t + " +" + (Date.now() - t0) + "ms ptr=" + e.pointerType + " tgt=" + String(tgt).slice(0, 24));
+                },
+                true,
+              );
+            });
+          })();
+          // ===== END TEMP DEBUG =====
           if (embedded) {
             try {
               window.parent.postMessage({ type: "jazguide:modal", open: open }, "*");
