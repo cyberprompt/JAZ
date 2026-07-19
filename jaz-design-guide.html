@@ -5237,8 +5237,10 @@
           var maxH = Math.max(120, vpH - margin * 2);
           var modalEl = modal.querySelector(".modal");
           var modalH = modalEl ? Math.min(modalEl.scrollHeight, maxH) : Math.min(480, maxH);
-          var top = vpTop + Math.max(margin, (vpH - modalH) / 2);
-          modal.style.setProperty("--modal-top", Math.round(top) + "px");
+          // Flexbox (justify-content:center) centers the modal in the now full-viewport
+          // frame; setting --modal-top would stack on top and push it down. Keep only
+          // --modal-maxh so a short screen still gets inner scroll.
+          modal.style.removeProperty("--modal-top");
           modal.style.setProperty("--modal-maxh", Math.round(maxH) + "px");
         }
         function requestViewport() {
