@@ -2210,14 +2210,14 @@
 
     <!-- ===== EMBEDDED MODEL (replace with build-time inject of jaz-guide-model.json) ===== -->
     <script id="model" type="application/json">
-{
+      {
   "meta": {
     "title": "Kitchen Renovation Planning Guide",
     "footer": {
       "text": "jazdesign.com/guide",
       "url": "https://www.jazdesign.com/guide"
     },
-    "schemaVersion": 17,
+    "schemaVersion": 19,
     "sourcePdf": "guide_optimizedFINAL.pdf",
     "notes": "Field schema extracted from the 12-page PDF. Drives the HTML template, autosave keys, and the Supabase JSON payload. Every input field has a stable `id` used as the storage key; ids are never renamed once shipped (renaming breaks saved records).",
     "fieldTypes": {
@@ -2241,7 +2241,7 @@
   "ui": {
     "loading": "Loading your previous answers…",
     "conflictTitle": "Which answers should we use?",
-    "conflictBody": "This guide has answers saved online that differ from what's on this device.",
+    "conflictBody": "This guide has answers saved online that differ from what's on this device. Possible reasons: using guide on another device or browser, editing both on and off Jazdesign.com. Recommended to use whichever has the most answers stored so you don't lose any work.",
     "conflictServerLabel": "Saved online",
     "conflictLocalLabel": "On this device",
     "conflictAnswered": "{{n}} answered",
@@ -2365,7 +2365,10 @@
       "required": true,
       "note": "Primary key for the record in Supabase. Captured at the email gate (online) or baked into embedded JSON (offline)."
     },
-    "timestamps": ["created_at", "updated_at"]
+    "timestamps": [
+      "created_at",
+      "updated_at"
+    ]
   },
   "preview": {
     "note": "Online: only page 1 (cover) shows before the email gate. Everything from Section One onward is gated.",
@@ -2375,7 +2378,9 @@
     {
       "id": "intro",
       "type": "info",
-      "pdfPages": [2],
+      "pdfPages": [
+        2
+      ],
       "persisted": false,
       "note": "Page 2 — JAZ's opening letter + coffee photo. Copy is in blocks[] (editable); style per block via class. Image = IMG.intro (still in template).",
       "blocks": [
@@ -2409,7 +2414,9 @@
       "id": "howto",
       "type": "info",
       "title": "How to use this guide",
-      "pdfPages": [2],
+      "pdfPages": [
+        2
+      ],
       "persisted": false,
       "note": "Page 3 — eyebrow + heading + body + the 'A note before you begin' explainer box. Rendered by buildHowto().",
       "blocks": {
@@ -2437,7 +2444,11 @@
     {
       "id": "section_one",
       "title": "Your Kitchen Vision & Priorities",
-      "pdfPages": [3, 4, 5],
+      "pdfPages": [
+        3,
+        4,
+        5
+      ],
       "intro": "This is the dreaming part. Don't edit yourself yet — just notice what comes up. The goal isn't a final answer, it's an honest starting point.",
       "fields": [
         {
@@ -2570,7 +2581,11 @@
     {
       "id": "section_two",
       "title": "Scope & Budget Basics",
-      "pdfPages": [6, 7, 8],
+      "pdfPages": [
+        6,
+        7,
+        8
+      ],
       "intro": "Homeowners who sleep best through a renovation set honest numbers before anyone picks up a hammer. This isn't about locking yourself in, it's a compass.",
       "fields": [
         {
@@ -2913,7 +2928,11 @@
     {
       "id": "section_three",
       "title": "Layout, Storage & Daily Life",
-      "pdfPages": [9, 10, 11],
+      "pdfPages": [
+        9,
+        10,
+        11
+      ],
       "intro": "This section is about your kitchen — your life, your rhythms, your constraints. A good design starts here, not with someone else's solution.",
       "fields": [
         {
@@ -2927,7 +2946,10 @@
           "type": "checkbox_group_priority",
           "label": "Which layout improvements matter most to you?",
           "hint": "Check all that apply. You can also number them 1-9 (or more) to prioritize.",
-          "priorityRange": [1, 9],
+          "priorityRange": [
+            1,
+            9
+          ],
           "options": [
             {
               "id": "more_prep_space",
@@ -3147,7 +3169,9 @@
       "id": "section_four",
       "type": "info",
       "title": "Next Steps & Optional Support",
-      "pdfPages": [12],
+      "pdfPages": [
+        12
+      ],
       "persisted": false,
       "intro": "Whether you continue on your own, work with a contractor, or decide to bring in design help, the work you've done in this guide gives you a much stronger starting point. You'll have clearer conversations, ask better questions, and make decisions with more confidence.\n\nIf you'd like a designer's eye on your plan, here are three light-touch ways to work together.",
       "services": [
@@ -3221,7 +3245,6 @@
     "Image URLs pending (see images.note)."
   ]
 }
-
     </script>
 
     <!-- ===== EMBEDDED USER DATA (offline downloads bake the saved record in here) ===== -->
