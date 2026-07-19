@@ -1742,13 +1742,13 @@
       }
       .pri-row {
         align-items: center;
-        touch-action: none;
         cursor: grab;
         transition:
           transform 0.16s ease,
           box-shadow 0.16s ease;
       }
       .pri-row.dragging {
+        touch-action: none;
         border-color: var(--teal);
         box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
         transform: scale(1.02);
