@@ -1744,6 +1744,9 @@
         align-items: center;
         cursor: grab;
         touch-action: pan-y; /* vertical swipe scrolls; a still long-press arms the drag */
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none; /* iOS: long-press must not open selection/callout */
         transition:
           transform 0.16s ease,
           box-shadow 0.16s ease;
