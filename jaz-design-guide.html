@@ -1743,6 +1743,7 @@
       .pri-row {
         align-items: center;
         cursor: grab;
+        touch-action: pan-y; /* vertical swipe scrolls; a still long-press arms the drag */
         transition:
           transform 0.16s ease,
           box-shadow 0.16s ease;
@@ -3922,7 +3923,6 @@
             // and releases the gesture to the browser. A single `done` latch makes end()
             // idempotent and prevents the multitouch listener/capture leak.
             var ARM_MS = 250;
-            var MOVE_TOL = 8;
             row.addEventListener("pointerdown", function (e) {
               // whole row is the drag hit area; let the checkbox toggle normally
               if (e.target.closest("input")) return;
@@ -3930,7 +3930,6 @@
               var grabIndex = rows.indexOf(row);
               if (grabIndex < 0) return;
               var pid = e.pointerId;
-              var startX = e.clientX;
               var startY = e.clientY;
               var curY = startY;
               var slot = grabIndex;
@@ -3982,15 +3981,10 @@
               }
 
               function onMove(ev) {
-                if (done) return;
-                if (!armed) {
-                  // pre-arm movement = the user is scrolling, not reordering: bail and
-                  // hand the gesture back to the browser (no capture was taken yet).
-                  if (Math.abs(ev.clientY - startY) > MOVE_TOL || Math.abs(ev.clientX - startX) > MOVE_TOL) {
-                    end();
-                  }
-                  return;
-                }
+                if (done || !armed) return;
+                // Once armed we own the gesture (pointer captured). Before arming, a
+                // scroll is handled by touch-action:pan-y — the browser fires
+                // pointercancel, which cancels the arm timer. No manual move test.
                 ev.preventDefault();
                 curY = ev.clientY;
                 apply();
