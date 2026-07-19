@@ -5906,6 +5906,16 @@
           }
         }
         window.__jazReportHeight = send;
+        // Parent asks for this after a modal closes: the frame was pinned to 100vh, so force an
+        // UNCONDITIONAL re-report (bypass the h===last guard) to snap the frame back to the real
+        // panel height. Without this the frame can stay stuck at the pre-modal (cropped) height.
+        window.addEventListener("message", function (e) {
+          if (e.data && e.data.type === "jazguide:remeasure") {
+            last = -1;
+            send();
+            setTimeout(send, 60);
+          }
+        });
         window.__jazModalH = 0;
         window.__jazGrowForModal = function (px) {
           var open = px > 0;
