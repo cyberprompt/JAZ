@@ -1743,6 +1743,9 @@
       .pri-row {
         align-items: center;
         cursor: grab;
+        /* NO touch-action: browser slop tolerates hold-jitter; a swipe scrolls
+           (pointercancel bails us); scroll is blocked only after arm via a
+           non-passive touchmove preventDefault in attachDrag. */
         touch-action: pan-y; /* vertical swipe scrolls; a still long-press arms the drag */
         user-select: none;
         -webkit-user-select: none;
@@ -3942,10 +3945,16 @@
               var done = false;
               var armTimer = null;
 
+              function blockScroll(ev) {
+                if (armed && !done) ev.preventDefault();
+              }
               function arm() {
                 armTimer = null;
                 if (done) return;
                 armed = true;
+                window.addEventListener("touchmove", blockScroll, {
+                  passive: false,
+                });
                 // snapshot geometry AT ARM time (layout is settled; handles wrapping)
                 rects = rows.map(function (r) {
                   var b = r.getBoundingClientRect();
@@ -3999,6 +4008,7 @@
                   clearTimeout(armTimer);
                   armTimer = null;
                 }
+                window.removeEventListener("touchmove", blockScroll);
                 window.removeEventListener("pointermove", onMove);
                 window.removeEventListener("pointerup", end);
                 window.removeEventListener("pointercancel", end);
