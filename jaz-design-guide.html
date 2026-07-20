@@ -665,7 +665,7 @@ pad lets the last line scroll clear past the ~40px foot fade (S43) */
         transform: scale(0.32);
         opacity: 0;
         z-index: 0;
-        animation: sonar 700ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        animation: sonar 500ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
       }
       .rcpt-pulse > svg,
       .rcpt-pulse > * {
@@ -4250,9 +4250,9 @@ pad lets the last line scroll clear past the ~40px foot fade (S43) */
               r.remove();
             });
           }
-          var RING_DUR = 700,
+          var RING_DUR = 300,
             RINGS = 1,
-            BURST = 550,
+            BURST = 250,
             LOOPS = 3;
           var gap = RINGS > 1 ? Math.round((BURST - RING_DUR) / (RINGS - 1)) : 0;
           for (var loop = 0; loop < LOOPS; loop++) {
