@@ -352,8 +352,11 @@
         right: 0;
         /* --drawer-top / --drawer-maxh set in px by openReceipt() from the reported band;
             fallbacks keep standalone/offline sane. Inner scroll for long receipts. */
-        top: var(--drawer-top, 0);
-        max-height: var(--drawer-maxh, 100%);
+        top: var(--drawer-top, 12px);
+        /* height must be DEFINITE for the inner .drawer-body flex child to shrink and scroll;
+           max-height alone lets the column grow to content -> no inner scroll (S43 fix). */
+        height: auto;
+        max-height: var(--drawer-maxh, calc(100% - 24px));
         width: 88%;
         max-width: 360px;
         background: var(--paper, #fbf8f2);
@@ -365,6 +368,20 @@
         overflow: hidden;
         transform: translateX(100%);
         transition: transform 0.28s ease;
+      }
+      /* Foot: content scrolls BEHIND this fade at the bottom edge, mirroring how the
+         head clips content at the top. Sits above .drawer-body (clipped by .drawer's
+         overflow:hidden); non-interactive so scroll/clicks pass through. (S43) */
+      .drawer::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 40px;
+        border-bottom-left-radius: 14px;
+        background: linear-gradient(to top, var(--paper, #fbf8f2), rgba(251, 248, 242, 0));
+        pointer-events: none;
       }
       .drawer-back.open .drawer {
         transform: translateX(0);
@@ -396,9 +413,26 @@
       }
       .drawer-body {
         flex: 1 1 auto;
+        min-height: 0; /* allow shrink below content size so overflow-y scrolls (flexbox default is min-height:auto) */
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding: 0 16px 18px;
+        /* extra right pad insets the scrollbar inward from the drawer edge; extra bottom
+pad lets the last line scroll clear past the ~40px foot fade (S43) */
+        padding: 0 20px 44px 16px;
+        /* Firefox: thin sage thumb on transparent track */
+        scrollbar-width: thin;
+        scrollbar-color: var(--sage) transparent;
+      }
+      .drawer-body::-webkit-scrollbar {
+        width: 7px;
+      }
+      .drawer-body::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 10px 0; /* visible top/bottom margin so the bar doesn't reach the corners */
+      }
+      .drawer-body::-webkit-scrollbar-thumb {
+        background: var(--sage);
+        border-radius: 7px;
       }
       /* ── receipt contents ── */
       .rcpt-ceilings {
@@ -5799,6 +5833,17 @@
           positionDrawer();
           document.getElementById("receiptDrawer").classList.add("open");
         }
+        // Keep the drawer's cap in sync with the viewport on resize / orientation change
+        // while it's open (orientationchange fires before dims settle -> rAF). (S43)
+        window.addEventListener("resize", function () {
+          if (document.getElementById("receiptDrawer").classList.contains("open")) positionDrawer();
+        });
+        window.addEventListener("orientationchange", function () {
+          if (!document.getElementById("receiptDrawer").classList.contains("open")) return;
+          requestAnimationFrame(function () {
+            requestAnimationFrame(positionDrawer);
+          });
+        });
         function closeReceipt() {
           document.getElementById("receiptDrawer").classList.remove("open");
         }
