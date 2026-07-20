@@ -5782,12 +5782,16 @@
           body.appendChild(tot);
         }
         function positionDrawer() {
-          var vpTop = _vp ? _vp.top : 0;
-          var vpH = _vp ? _vp.height : window.innerHeight;
+          // The parent takes the frame full-viewport (100dvh, fixed) while the drawer is
+          // open — the S40 modal protocol now covers .drawer-back too — so the child's own
+          // coordinate space IS the visible viewport. Pin to a small margin off the top and
+          // cap height to the frame; the band offset (_vp.top) no longer applies. .drawer-body
+          // keeps overflow-y:auto so long receipts scroll inside this capped height.
           var margin = 12;
+          var frameH = window.innerHeight;
           var drawer = document.getElementById("receiptDrawer");
-          drawer.style.setProperty("--drawer-top", Math.round(vpTop + margin) + "px");
-          drawer.style.setProperty("--drawer-maxh", Math.max(160, Math.round(vpH - margin * 2)) + "px");
+          drawer.style.setProperty("--drawer-top", margin + "px");
+          drawer.style.setProperty("--drawer-maxh", Math.max(160, Math.round(frameH - margin * 2)) + "px");
         }
         function openReceipt() {
           requestViewport(); // async band reply repositions
@@ -6089,16 +6093,17 @@
       })();
     </script>
     <script>
-      /* Centralized modal watcher: when ANY .modal-back gains the "open" class, tell the
-         parent to take the frame full-viewport (so the fixed backdrop shades the whole
-         page) and hide the pager; revert when none remain open. Replaces the old
-         conflict-only wiring so every modal behaves identically. Drawers (.drawer-back)
-         and the load-overlay are intentionally excluded. */
+      /* Centralized modal watcher: when ANY .modal-back OR the cost-summary .drawer-back
+         gains the "open" class, tell the parent to take the frame full-viewport (so the
+         fixed backdrop shades the whole page + parent scroll is locked) and hide the pager;
+         revert when none remain open. Replaces the old conflict-only wiring so every modal
+         behaves identically. The drawer is included (S43) so opening it locks the page like a
+         modal; the load-overlay stays excluded. */
       (function () {
         var embedded = window.parent !== window;
         var lastOpen = false;
         function anyOpen() {
-          var list = document.querySelectorAll(".modal-back");
+          var list = document.querySelectorAll(".modal-back, .drawer-back");
           for (var i = 0; i < list.length; i++) {
             if (list[i].classList.contains("open")) return true;
           }
@@ -6117,7 +6122,7 @@
         }
         var mo = new MutationObserver(sync);
         function arm() {
-          var list = document.querySelectorAll(".modal-back");
+          var list = document.querySelectorAll(".modal-back, .drawer-back");
           for (var i = 0; i < list.length; i++) {
             mo.observe(list[i], { attributes: true, attributeFilter: ["class"] });
           }
