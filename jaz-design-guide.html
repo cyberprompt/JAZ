@@ -361,26 +361,45 @@
         max-width: 360px;
         background: var(--paper, #fbf8f2);
         box-shadow: -14px 0 40px rgba(44, 49, 56, 0.22);
+        /* drop-shadow (unlike box-shadow) is applied AFTER the mask, so it traces the
+           TORN silhouette incl. teeth — a darker shadow layered over the ambient box-shadow (S43) */
+        filter: drop-shadow(0 5px 9px rgba(44, 49, 56, 0.42));
         border-top-left-radius: 14px;
-        border-bottom-left-radius: 14px;
+        border-bottom-left-radius: 0; /* teeth own the bottom edge; radius + serration fight (S43) */
         display: flex;
         flex-direction: column;
         overflow: hidden;
         transform: translateX(100%);
         transition: transform 0.28s ease;
+        /* Torn-receipt bottom: a mask cuts triangular notches out of the paper (+ its
+           shadow), so the page shows through the gaps. Solid top block + two mirrored
+           diagonal gradients = the zig-zag. --tooth-w = spacing, --tooth-h = point depth. */
+        --tooth-w: 14px;
+        --tooth-h: 22px;
+        -webkit-mask:
+          linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth-h)) no-repeat,
+          linear-gradient(45deg, transparent 50%, #000 50%) bottom left / var(--tooth-w) var(--tooth-h) repeat-x,
+          linear-gradient(-45deg, transparent 50%, #000 50%) bottom left / var(--tooth-w) var(--tooth-h) repeat-x;
+        -webkit-mask-composite: source-over;
+        mask:
+          linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth-h)) no-repeat,
+          linear-gradient(45deg, transparent 50%, #000 50%) bottom left / var(--tooth-w) var(--tooth-h) repeat-x,
+          linear-gradient(-45deg, transparent 50%, #000 50%) bottom left / var(--tooth-w) var(--tooth-h) repeat-x;
+        mask-composite: add;
       }
       /* Foot: content scrolls BEHIND this fade at the bottom edge, mirroring how the
          head clips content at the top. Sits above .drawer-body (clipped by .drawer's
          overflow:hidden); non-interactive so scroll/clicks pass through. (S43) */
+      /* Foot fade: dissolves scrolling content just ABOVE the serrated teeth. Bottom
+         offset = --tooth-h so the fade ends where the notches begin (S43). */
       .drawer::after {
         content: "";
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 0;
-        height: 40px;
-        border-bottom-left-radius: 14px;
-        background: linear-gradient(to top, var(--paper, #fbf8f2), rgba(251, 248, 242, 0));
+        bottom: 0; /* reach down to the tooth line; the mask erases the fade's own notch region, leaving the fade over the flat paper above (S43) */
+        height: 64px;
+        background: linear-gradient(to top, var(--paper, #fbf8f2) 34%, rgba(251, 248, 242, 0));
         pointer-events: none;
       }
       .drawer-back.open .drawer {
@@ -398,6 +417,15 @@
         font-size: 1.1rem;
         margin: 0;
         color: var(--ink);
+      }
+      .drawer-head-total {
+        margin-left: auto; /* sit hard-right, just before the close X */
+        margin-right: 12px;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--ink);
+        white-space: nowrap;
       }
       .drawer-close {
         border: none;
@@ -418,7 +446,7 @@
         -webkit-overflow-scrolling: touch;
         /* extra right pad insets the scrollbar inward from the drawer edge; extra bottom
 pad lets the last line scroll clear past the ~40px foot fade (S43) */
-        padding: 0 20px 44px 16px;
+        padding: 0 20px 60px 16px;
         /* Firefox: thin sage thumb on transparent track */
         scrollbar-width: thin;
         scrollbar-color: var(--sage) transparent;
@@ -3518,6 +3546,7 @@ pad lets the last line scroll clear past the ~40px foot fade (S43) */
       <aside class="drawer" id="receiptPanel">
         <div class="drawer-head">
           <h2 id="receiptTitle">Cost totals</h2>
+          <span class="drawer-head-total" id="receiptHeadTotal" aria-hidden="true"></span>
           <button class="drawer-close" id="receiptClose" type="button" aria-label="Close cost totals">
             <svg
               width="18"
@@ -5808,6 +5837,9 @@ pad lets the last line scroll clear past the ~40px foot fade (S43) */
             list.appendChild(line);
           });
           body.appendChild(list);
+
+          var headTot = document.getElementById("receiptHeadTotal");
+          if (headTot) headTot.textContent = rcptMoney(r.total);
 
           body.appendChild(el("div", "rcpt-total-rule"));
           var tot = el("div", "rcpt-total" + (r.overMax ? " over" : ""));
